@@ -1,7 +1,52 @@
-// src/pages/EquipmentPage.jsx
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/CheckinPage.jsx
+import React, { useEffect, useState } from "react";
 import HeaderUser from "../../components/HeaderUser";
-import "../../styles/equipment.css";
+import "../../styles/checkin.css";
+
+// ปุ่มชั้นบน / ชนิดสนาม
+const TOP = [
+  { k: "outdoor", name: "สนามกลางแจ้ง", isOutdoor: true },
+  { k: "badminton", name: "สนามแบดมินตัน" },
+  { k: "track", name: "สนามลู่-ลาน" },
+  { k: "pool", name: "สระว่ายน้ำ" },
+];
+
+const OUTDOOR_SUBS = [
+  { k: "tennis", name: "เทนนิส" },
+  { k: "basketball", name: "บาสเกตบอล" },
+  { k: "futsal", name: "ฟุตซอล" },
+  { k: "football", name: "ฟุตบอล" },
+  { k: "volleyball", name: "วอลเลย์บอล" },
+  { k: "sepak_takraw", name: "เซปักตะกร้อ" },
+  { k: "badminton", name: "แบดมินตัน" },
+];
+
+// key ย่อยของกลางแจ้ง
+const OUTDOOR_KEYS = [
+  "outdoor:tennis",
+  "outdoor:basketball",
+  "outdoor:futsal",
+  "outdoor:football",
+  "outdoor:volleyball",
+  "outdoor:sepak_takraw",
+  "outdoor:badminton",
+];
+
+// ชื่อสนามเดี่ยว
+const SINGLE_FACILITY_NAMES = {
+  badminton: "สนามแบดมินตัน",
+  track: "สนามลู่-ลาน",
+  pool: "สระว่ายน้ำ",
+};
+
+const FACILITY_LABELS = {
+  outdoor: "สนามกลางแจ้ง",
+  badminton: "สนามแบดมินตัน",
+  track: "สนามลู่-ลาน",
+  pool: "สระว่ายน้ำ",
+};
+
+const FACILITY_KEYS = ["outdoor", "badminton", "track", "pool"];
 
 function getCookie(name) {
   const v = `; ${document.cookie}`;
@@ -9,894 +54,446 @@ function getCookie(name) {
   return p.length === 2 ? p.pop().split(";").shift() : null;
 }
 
-export default function EquipmentPage() {
-  const BACKEND = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(
-    /\/$/,
-    ""
-  );
+export default function CheckinPage() {
+  const BACKEND = (
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+  ).replace(/\/$/, "");
 
-  const BORROW_API = `${BACKEND}/api/equipment/borrow/`;
-  const RETURN_API = `${BACKEND}/api/equipment/return/`;
-  const STOCKS_API = `${BACKEND}/api/equipment/stock/`;
-  const PENDING_RETURNS_API = `${BACKEND}/api/equipment/pending-returns/`;
-  const FACULTY_CHECK_API = `${BACKEND}/api/equipment/faculty-from-student/`;
+  const [currentFacility, setCurrentFacility] = useState(null); // 'outdoor' | 'badminton' | 'track' | 'pool'
+  const [selectedSub, setSelectedSub] = useState(null); // {k,name} เฉพาะกลางแจ้ง
+  const [students, setStudents] = useState("");
+  const [staff, setStaff] = useState("");
+  const [error, setError] = useState("");
 
-  const csrftoken = getCookie("csrftoken") || "";
+  // progress ว่าตัวไหนเช็คอินแล้วของวันนี้ เช่น { "outdoor:tennis": true, "badminton": true, ... }
+  const [doneMap, setDoneMap] = useState({});
+
+  // สถานะว่าแต่ละ "ประเภทสนาม" เช็คอินครบแล้วหรือยัง (ใช้แสดง banner / ตรวจสิทธิ์ประเมิน)
+  const [facilityDone, setFacilityDone] = useState({});
+  // สถานะว่าแต่ละประเภททำแบบประเมินแล้วหรือยัง
+  const [facilityFeedback, setFacilityFeedback] = useState({});
+
   const displayName =
     window.CURRENT_USER || localStorage.getItem("display_name") || "ผู้ใช้งาน";
 
-  const [activeTab, setActiveTab] = useState("borrow");
+  const todayStr = new Date().toISOString().slice(0, 10);
 
-  // ---------- Borrow state ----------
-  const [equipments, setEquipments] = useState([]); // [{name, stock}]
-  const [studentId, setStudentId] = useState("");
-  const [faculty, setFaculty] = useState("");
-  const [facultyLocked, setFacultyLocked] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [selectedEquip, setSelectedEquip] = useState("");
-  const [qty, setQty] = useState("1");
-  const [items, setItems] = useState([]); // [{equipment, qty}]
-  const [studentError, setStudentError] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [borrowLoading, setBorrowLoading] = useState(false);
-  const [borrowError, setBorrowError] = useState("");
-  const [showBorrowSheet, setShowBorrowSheet] = useState(false);
+  // โหลด progress ย่อยของแต่ละสนามจาก localStorage (ต่อวัน)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("checkin_progress");
+      if (!raw) {
+        setDoneMap({});
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.date !== todayStr || typeof parsed.done !== "object") {
+        setDoneMap({});
+        return;
+      }
+      setDoneMap(parsed.done || {});
+    } catch {
+      setDoneMap({});
+    }
+  }, [todayStr]);
 
-  // ---------- Return state ----------
-  const [pendingRows, setPendingRows] = useState([]); // [{id?, student_id, faculty, phone, equipment, borrowed, pending, borrow_date}]
-  const [returnLoading, setReturnLoading] = useState(false);
-  const [returnError, setReturnError] = useState("");
-  const [showReturnSheet, setShowReturnSheet] = useState(false);
+  // โหลดสถานะ "เช็คอินครบต่อประเภทสนาม" + "ทำแบบประเมินแล้ว" ในวันนี้
+  useEffect(() => {
+    // done
+    try {
+      const rawDone = localStorage.getItem("checkin_facility_done");
+      if (rawDone) {
+        const parsed = JSON.parse(rawDone);
+        if (parsed.date === todayStr && typeof parsed.facilities === "object") {
+          setFacilityDone(parsed.facilities);
+        } else {
+          setFacilityDone({});
+        }
+      } else {
+        setFacilityDone({});
+      }
+    } catch {
+      setFacilityDone({});
+    }
 
-  // filter
-  const [filterSid, setFilterSid] = useState("");
-  const [filterDate, setFilterDate] = useState("");
+    // feedback
+    try {
+      const rawFb = localStorage.getItem("checkin_facility_feedback");
+      if (rawFb) {
+        const parsed = JSON.parse(rawFb);
+        if (parsed.date === todayStr && typeof parsed.facilities === "object") {
+          setFacilityFeedback(parsed.facilities);
+        } else {
+          setFacilityFeedback({});
+        }
+      } else {
+        setFacilityFeedback({});
+      }
+    } catch {
+      setFacilityFeedback({});
+    }
+  }, [todayStr]);
 
-  // ---------- derived ----------
-  const stockByName = useMemo(() => {
-    const m = {};
-    equipments.forEach((e) => {
-      m[e.name] = e.stock ?? 0;
-    });
-    return m;
-  }, [equipments]);
+  // ป้ายวันที่ (ไทย + พ.ศ.)
+  useEffect(() => {
+    const el = document.getElementById("todayDate");
+    if (!el) return;
+    const render = () => {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat("th-TH", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).formatToParts(now);
+      const thaiYear = now.getFullYear() + 543;
+      el.textContent = parts
+        .map((p) => (p.type === "year" ? String(thaiYear) : p.value))
+        .join("");
+    };
+    render();
+    const t = setInterval(render, 60000);
+    return () => clearInterval(t);
+  }, []);
 
-  const todayISO = useMemo(
-    () => new Date().toISOString().slice(0, 10),
-    []
+  function onTopClick(f) {
+    setCurrentFacility(f.k);
+    setSelectedSub(null);
+    setStudents("");
+    setStaff("");
+    setError("");
+  }
+
+  const okCounts =
+    Number.isInteger(Number(students)) &&
+    Number(students) >= 0 &&
+    Number.isInteger(Number(staff)) &&
+    Number(staff) >= 0 &&
+    students !== "" &&
+    staff !== "";
+
+  const canSubmit =
+    currentFacility === "outdoor"
+      ? okCounts && !!selectedSub
+      : okCounts && !!currentFacility;
+
+  // outdoor เช็คครบหรือยัง
+  function isOutdoorDone(map) {
+    return OUTDOOR_KEYS.every((k) => map[k]);
+  }
+
+  async function doCheckin() {
+    if (!canSubmit) return;
+    setError("");
+
+    // key ย่อยของสนามนี้ (ใช้ป้องกันกรอกซ้ำ)
+    let key = null;
+    if (currentFacility === "outdoor" && selectedSub && selectedSub.k) {
+      key = `outdoor:${selectedSub.k}`;
+    } else if (currentFacility) {
+      key = currentFacility; // badminton / track / pool
+    }
+
+    if (key && doneMap[key]) {
+      setError("วันนี้มีการบันทึกข้อมูลของสนามนี้ไปแล้ว");
+      return; // ห้ามส่งซ้ำ
+    }
+
+    const csrftoken = getCookie("csrftoken") || "";
+
+    const body = {
+      facility: currentFacility,
+      outdoor_sub:
+        currentFacility === "outdoor"
+          ? selectedSub
+            ? selectedSub.k
+            : ""
+          : "",
+      count: Number(students) + Number(staff),
+      note: "",
+    };
+
+    try {
+      const res = await fetch(`${BACKEND}/api/checkin/event/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          ...(csrftoken ? { "X-CSRFToken": csrftoken } : {}),
+        },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "บันทึกไม่สำเร็จ");
+      }
+
+      // === อัปเดต progress ย่อยของวันนี้ ===
+      let completedFacility = null;
+      if (key) {
+        const nextDone = {
+          ...doneMap,
+          [key]: true,
+        };
+        setDoneMap(nextDone);
+
+        // เก็บ progress ต่อวัน (ทุกสนามย่อย)
+        localStorage.setItem(
+          "checkin_progress",
+          JSON.stringify({ date: todayStr, done: nextDone })
+        );
+
+        // ถ้ากลางแจ้ง → ถือว่า "ประเภทสนามกลางแจ้ง" เสร็จเมื่อครบทุกสนามย่อย
+        if (currentFacility === "outdoor" && isOutdoorDone(nextDone)) {
+          completedFacility = "outdoor";
+        }
+        // สนามเดี่ยว → ทำครั้งเดียวก็ถือว่าเสร็จ
+        if (currentFacility !== "outdoor") {
+          completedFacility = currentFacility;
+        }
+      }
+
+      // ถ้าประเภทสนามใด "เช็คอินครบแล้ว" → เก็บลง localStorage สำหรับใช้เช็คสิทธิ์แบบประเมิน
+      if (completedFacility) {
+        let facilities = {};
+        try {
+          const rawDone = localStorage.getItem("checkin_facility_done");
+          if (rawDone) {
+            const parsed = JSON.parse(rawDone);
+            if (
+              parsed.date === todayStr &&
+              typeof parsed.facilities === "object"
+            ) {
+              facilities = parsed.facilities;
+            }
+          }
+        } catch {
+          /* ignore */
+        }
+        facilities[completedFacility] = true;
+        localStorage.setItem(
+          "checkin_facility_done",
+          JSON.stringify({ date: todayStr, facilities })
+        );
+        setFacilityDone(facilities);
+      }
+
+      // overlay success
+      const ov = document.getElementById("overlay");
+      if (ov) {
+        ov.classList.add("show");
+      }
+
+      setStudents("");
+      setStaff("");
+
+      setTimeout(() => {
+        if (ov) ov.classList.remove("show");
+
+        // ถ้าสนามประเภทนี้เช็คอินครบแล้ว → ถามว่าจะไปหน้าแบบประเมินเลยไหม
+        if (completedFacility) {
+          const label = FACILITY_LABELS[completedFacility] || "สนามนี้";
+          const go = window.confirm(
+            `วันนี้เช็คอินครบสำหรับ${label}แล้ว\nต้องการไปหน้าแบบประเมินของสนามนี้เลยหรือไม่?`
+          );
+          if (go) {
+            window.location.href = `/checkin_feedback?facility=${completedFacility}`;
+          }
+        }
+      }, 900);
+    } catch (e) {
+      setError(e && e.message ? e.message : "บันทึกไม่สำเร็จ");
+    }
+  }
+
+  // รายการประเภทสนามที่ "เช็คอินครบแล้วแต่ยังไม่ทำแบบประเมิน"
+  const facilitiesNeedFeedback = FACILITY_KEYS.filter(
+    (fac) => facilityDone[fac] && !facilityFeedback[fac]
   );
 
-  const filteredRows = useMemo(() => {
-    return pendingRows.filter((r) => {
-      const sidOk = !filterSid || String(r.student_id || "").includes(filterSid);
-      const dateOk = !filterDate || r.borrow_date === filterDate;
-      return sidOk && dateOk;
-    });
-  }, [pendingRows, filterSid, filterDate]);
-
-  const hasFilter = !!filterSid || !!filterDate;
-  const noFilterResults = hasFilter && filteredRows.length === 0 && pendingRows.length > 0;
-
-  // ---------- helper ----------
-  async function fetchJSON(url, options = {}) {
-    const resp = await fetch(url, options);
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || data.ok === false) {
-      const msg = data.message || data.error || `HTTP ${resp.status}`;
-      throw new Error(msg);
-    }
-    return data;
-  }
-
-  function openSheet(setter) {
-    setter(true);
-    setTimeout(() => setter(false), 900);
-  }
-
-  function clampQtyValue(v, min = 1) {
-    let n = parseInt(v, 10);
-    if (!Number.isFinite(n) || n < min) n = min;
-    return String(n);
-  }
-
-  // ---------- initial load ----------
-  useEffect(() => {
-    document.body.dataset.page = "equipment";
-
-    // โหลด sid / fac / phone จาก localStorage
-    try {
-      const sid = localStorage.getItem("sfms_sid");
-      const fac = localStorage.getItem("sfms_fac");
-      const tel = localStorage.getItem("sfms_phone");
-      if (sid) setStudentId(sid);
-      if (fac) setFaculty(fac);
-      if (tel) setPhone(tel);
-    } catch {
-      // ignore
-    }
-
-    setFilterDate(todayISO);
-
-    (async () => {
-      // โหลด stock
-      try {
-        const data = await fetchJSON(STOCKS_API, {
-          credentials: "include",
-        });
-        const list = data.equipments || data.items || [];
-        setEquipments(list);
-        if (list.length > 0) setSelectedEquip(list[0].name);
-      } catch (e) {
-        console.warn("Load stock failed", e);
-      }
-
-      // โหลด pending returns
-      setReturnLoading(true);
-      setReturnError("");
-      try {
-        const data = await fetchJSON(PENDING_RETURNS_API, {
-          credentials: "include",
-        });
-        const rows = (data.rows || []).map((r, idx) => ({
-          id: r.id ?? idx,
-          student_id: r.student_id,
-          faculty: r.faculty,
-          phone: r.phone || r.contact_phone || "",
-          equipment: r.equipment,
-          borrowed: r.borrowed ?? r.quantity_borrowed ?? 0,
-          pending: r.remaining ?? r.quantity_pending ?? 0,
-          borrow_date: r.borrow_date || todayISO,
-        }));
-        setPendingRows(rows);
-      } catch (e) {
-        setReturnError(e.message || "โหลดรายการค้างคืนไม่สำเร็จ");
-      } finally {
-        setReturnLoading(false);
-      }
-    })();
-  }, [BACKEND, STOCKS_API, PENDING_RETURNS_API, todayISO]);
-
-  // ---------- faculty auto from student id ----------
-  async function handleCheckFaculty() {
-    const sid = studentId.trim();
-    if (!/^6\d{7}$/.test(sid)) {
-      setFacultyLocked(false);
-      return;
-    }
-    try {
-      const url = `${FACULTY_CHECK_API}?student_id=${encodeURIComponent(sid)}`;
-      const data = await fetchJSON(url, { credentials: "include" });
-      if (data.faculty) {
-        setFaculty(data.faculty);
-        setFacultyLocked(true);
-      } else {
-        setFacultyLocked(false);
-      }
-    } catch (e) {
-      console.warn("FACULTY_CHECK failed", e);
-      setFacultyLocked(false);
-    }
-  }
-
-  // ---------- handlers (borrow) ----------
-  function handleStudentChange(e) {
-    const digits = (e.target.value || "").replace(/\D/g, "").slice(0, 8);
-    setStudentId(digits);
-
-    if (digits.length === 8 && !/^6\d{7}$/.test(digits)) {
-      setStudentError("ต้องขึ้นต้นด้วยเลข 6 และมีทั้งหมด 8 หลัก");
-    } else {
-      setStudentError("");
-    }
-    if (digits.length === 0) {
-      setFacultyLocked(false);
-    }
-  }
-
-  function handlePhoneChange(e) {
-    const digits = (e.target.value || "").replace(/\D/g, "").slice(0, 10);
-    setPhone(digits);
-
-    if (!digits) {
-      setPhoneError("");
-      return;
-    }
-    if (/^0\d{8,9}$/.test(digits)) {
-      setPhoneError("");
-    } else {
-      setPhoneError("กรุณากรอกเบอร์โทร 9–10 หลัก ขึ้นต้นด้วย 0");
-    }
-  }
-
-  function changeQty(delta) {
-    let n = parseInt(qty, 10);
-    if (!Number.isFinite(n) || n < 1) n = 1;
-    n = n + delta;
-    if (n < 1) n = 1;
-    setQty(String(n));
-  }
-
-  function handleAddItem() {
-    setBorrowError("");
-
-    const eq = selectedEquip;
-    let n = parseInt(qty, 10);
-    if (!Number.isFinite(n) || n < 1) n = 1;
-
-    if (!eq) {
-      setBorrowError("กรุณาเลือกอุปกรณ์");
-      return;
-    }
-
-    const currentStock = stockByName[eq] ?? 0;
-    const alreadyInCart = items.find((i) => i.equipment === eq)?.qty || 0;
-    if (n + alreadyInCart > currentStock) {
-      setBorrowError("จำนวนที่เลือกเกินจำนวนคงเหลือ");
-      return;
-    }
-
-    setItems((prev) => {
-      const idx = prev.findIndex((i) => i.equipment === eq);
-      if (idx === -1) {
-        return [...prev, { equipment: eq, qty: n }];
-      }
-      const copy = [...prev];
-      copy[idx] = { ...copy[idx], qty: copy[idx].qty + n };
-      return copy;
-    });
-  }
-
-  function handleRemoveItem(equipment) {
-    setItems((prev) => prev.filter((i) => i.equipment !== equipment));
-  }
-
-  async function handleBorrow() {
-    setBorrowError("");
-
-    const sid = studentId.trim();
-    const fac = faculty.trim();
-    const tel = phone.trim();
-
-    if (!/^6\d{7}$/.test(sid)) {
-      setBorrowError("รหัสนิสิตต้องเป็นตัวเลข 8 หลัก เริ่มด้วย 6");
-      return;
-    }
-    if (!tel) {
-      setBorrowError("กรุณากรอกเบอร์โทรศัพท์");
-      return;
-    }
-    if (phoneError) {
-      setBorrowError(phoneError);
-      return;
-    }
-
-    let cart = items;
-    // ถ้าผู้ใช้ยังไม่ได้กดเพิ่มรายการ แต่มีอุปกรณ์/จำนวนอยู่ ให้ auto เติมลง cart
-    if (cart.length === 0 && selectedEquip) {
-      const n = parseInt(qty, 10);
-      if (!Number.isFinite(n) || n < 1) {
-        setBorrowError("กรุณาระบุจำนวนที่ยืม");
-        return;
-      }
-      cart = [{ equipment: selectedEquip, qty: n }];
-    }
-
-    if (cart.length === 0) {
-      setBorrowError("กรุณาเพิ่มอุปกรณ์อย่างน้อย 1 รายการ");
-      return;
-    }
-
-    // เช็ค stock รวมทั้ง cart ก่อนยิง API
-    for (const item of cart) {
-      const left = stockByName[item.equipment] ?? 0;
-      if (left <= 0 || item.qty > left) {
-        setBorrowError(`จำนวนที่ยืมเกินจำนวนคงเหลือของ ${item.equipment}`);
-        return;
-      }
-    }
-
-    try {
-      localStorage.setItem("sfms_sid", sid);
-      if (fac) localStorage.setItem("sfms_fac", fac);
-      localStorage.setItem("sfms_phone", tel);
-    } catch {
-      // ignore
-    }
-
-    if (borrowLoading) return;
-    setBorrowLoading(true);
-
-    try {
-      const payload = {
-        student_id: sid,
-        faculty: fac,
-        phone: tel,
-        // NOTE: backend ตอนนี้อาจรับแบบเดิม (equipment + qty)
-        // ถ้าจะใช้หลายรายการจริง ๆ ให้ปรับ Django ให้ loop ผ่าน items แทน
-        items: cart.map((i) => ({
-          equipment: i.equipment,
-          qty: i.qty,
-        })),
-      };
-
-      await fetchJSON(BORROW_API, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-          ...(csrftoken ? { "X-CSRFToken": csrftoken } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      // update stock ฝั่งหน้า
-      setEquipments((prev) =>
-        prev.map((item) => {
-          const found = cart.find((c) => c.equipment === item.name);
-          if (!found) return item;
-          return {
-            ...item,
-            stock: Math.max(0, (item.stock ?? 0) - found.qty),
-          };
-        })
-      );
-
-      // overlay
-      openSheet(setShowBorrowSheet);
-
-      // clear cart และสลับไปหน้าคืน
-      setItems([]);
-      setActiveTab("return");
-
-      // upsert pendingRows
-      setPendingRows((prev) => {
-        const rows = [...prev];
-        cart.forEach((item) => {
-          const idx = rows.findIndex(
-            (r) =>
-              r.student_id === sid &&
-              r.equipment === item.equipment &&
-              r.borrow_date === todayISO
-          );
-          if (idx === -1) {
-            rows.push({
-              id: `local-${Date.now()}-${item.equipment}`,
-              student_id: sid,
-              faculty: fac || "-",
-              phone: tel,
-              equipment: item.equipment,
-              borrowed: item.qty,
-              pending: item.qty,
-              borrow_date: todayISO,
-            });
-          } else {
-            const r = rows[idx];
-            rows[idx] = {
-              ...r,
-              borrowed: (r.borrowed || 0) + item.qty,
-              pending: (r.pending || 0) + item.qty,
-              phone: tel || r.phone,
-            };
-          }
-        });
-        return rows;
-      });
-    } catch (e) {
-      setBorrowError(e.message || "ไม่สามารถทำรายการยืมได้");
-    } finally {
-      setBorrowLoading(false);
-    }
-  }
-
-  // ---------- handlers (return) ----------
-  async function handleReturn(row, qtyReturn) {
-    if (!qtyReturn || qtyReturn < 1) return;
-
-    try {
-      const payload = {
-        student_id: row.student_id,
-        faculty: row.faculty,
-        phone: row.phone,
-        equipment: row.equipment,
-        qty: qtyReturn,
-      };
-
-      await fetchJSON(RETURN_API, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-          ...(csrftoken ? { "X-CSRFToken": csrftoken } : {}),
-        },
-        body: JSON.stringify(payload),
-      });
-
-      openSheet(setShowReturnSheet);
-
-      setPendingRows((prev) => {
-        const rows = prev.map((r) => ({ ...r }));
-        const idx = rows.findIndex((r) => r.id === row.id);
-        if (idx === -1) return prev;
-        const target = rows[idx];
-        const newPending = Math.max(0, (target.pending || 0) - qtyReturn);
-        target.pending = newPending;
-        if (newPending <= 0) {
-          rows.splice(idx, 1);
-        }
-        return rows;
-      });
-
-      // เพิ่ม stock กลับให้ item นั้น
-      setEquipments((prev) =>
-        prev.map((item) =>
-          item.name === row.equipment
-            ? { ...item, stock: (item.stock ?? 0) + qtyReturn }
-            : item
-        )
-      );
-    } catch (e) {
-      alert(e.message || "คืนอุปกรณ์ไม่สำเร็จ");
-    }
-  }
-
-  // ---------- render ----------
   return (
-    <div className="equipment-page" data-page="equipment">
+    <div className="wrap" data-page="checkin">
       <HeaderUser displayName={displayName} BACKEND={BACKEND} />
+      <main>
+        <span id="todayDate" className="date-badge" aria-live="polite" />
 
-      <main className="equipment-wrap">
-        {/* Mode bar */}
-        <div className="modebar" role="tablist" aria-label="โหมด">
-          <button
-            type="button"
-            className={`mode ${activeTab === "borrow" ? "active" : ""}`}
-            aria-selected={activeTab === "borrow" ? "true" : "false"}
-            onClick={() => setActiveTab("borrow")}
-          >
-            ยืมอุปกรณ์
-          </button>
-          <button
-            type="button"
-            className={`mode ${activeTab === "return" ? "active" : ""}`}
-            aria-selected={activeTab === "return" ? "true" : "false"}
-            onClick={() => setActiveTab("return")}
-          >
-            คืนอุปกรณ์
-          </button>
-        </div>
-
-        {/* ---------- Borrow section ---------- */}
-        {activeTab === "borrow" && (
-          <section id="borrowSection" className="grid">
-            {/* card form borrow */}
-            <form
-              className="panel form-card"
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleBorrow();
-              }}
-              noValidate
+        {/* banner nag ให้ไปทำแบบประเมิน ถ้าเช็คอินครบแล้วแต่ยังไม่ส่ง */}
+        {facilitiesNeedFeedback.length > 0 && (
+          <div className="feedback-alert" role="status">
+            <span>
+              วันนี้เช็คอินครบสำหรับ
+              {" "}
+              {facilitiesNeedFeedback.length === 1
+                ? FACILITY_LABELS[facilitiesNeedFeedback[0]]
+                : "หลายประเภทสนาม"}
+              {" "}
+              แล้ว แต่ยังไม่ได้ทำแบบประเมิน
+            </span>
+            <button
+              type="button"
+              className="feedback-alert-btn"
+              onClick={() =>
+                window.location.href = `/checkin_feedback?facility=${facilitiesNeedFeedback[0]}`
+              }
             >
-              <h2 className="panel-title">ข้อมูลการยืม</h2>
+              ไปทำแบบประเมิน
+            </button>
+          </div>
+        )}
 
-              <div className="form-grid">
-                <label className="field">
-                  <span className="field-label">รหัสนิสิต</span>
-                  <input
-                    id="studentId"
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={8}
-                    placeholder="6XXXXXXX"
-                    className="input"
-                    aria-describedby="studentError"
-                    value={studentId}
-                    onChange={handleStudentChange}
-                    onBlur={handleCheckFaculty}
-                  />
-                  {studentError && (
-                    <small id="studentError" className="field-error">
-                      {studentError}
-                    </small>
-                  )}
-                </label>
-
-                <label className="field">
-                  <span className="field-label">เบอร์โทรศัพท์</span>
-                  <input
-                    id="phone"
-                    type="tel"
-                    inputMode="numeric"
-                    placeholder="0XXXXXXXXX"
-                    className="input"
-                    value={phone}
-                    onChange={handlePhoneChange}
-                  />
-                  {phoneError && (
-                    <small className="field-error">{phoneError}</small>
-                  )}
-                </label>
-
-                <label className="field">
-                  <span className="field-label">คณะ</span>
-                  <div className="select-wrap">
-                    <select
-                      id="faculty"
-                      value={faculty}
-                      onChange={(e) => setFaculty(e.target.value)}
-                      disabled={facultyLocked}
-                    >
-                      <option value="">เลือกคณะ</option>
-                      <option value="คณะเทคโนโลยีสารสนเทศ">
-                        คณะเทคโนโลยีสารสนเทศ
-                      </option>
-                      <option value="คณะพยาบาลศาสตร์">คณะพยาบาลศาสตร์</option>
-                      <option value="คณะอื่น ๆ">คณะอื่น ๆ</option>
-                    </select>
-                    <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M6 9l6 6 6-6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                  </div>
-                </label>
-              </div>
-
-              <div className="divider-row" />
-
-              <div className="form-grid">
-                <label className="field">
-                  <span className="field-label">อุปกรณ์</span>
-                  <div className="select-wrap">
-                    <select
-                      id="equipment"
-                      value={selectedEquip}
-                      onChange={(e) => setSelectedEquip(e.target.value)}
-                    >
-                      {equipments.length === 0 ? (
-                        <option disabled>ยังไม่มีข้อมูลอุปกรณ์</option>
-                      ) : (
-                        equipments.map((e) => (
-                          <option key={e.name} value={e.name}>
-                            {e.name} (คงเหลือ {e.stock ?? 0})
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    <svg className="caret" viewBox="0 0 24 24" aria-hidden="true">
-                      <path
-                        d="M6 9l6 6 6-6"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      />
-                    </svg>
-                  </div>
-                </label>
-
-                <label className="field">
-                  <span className="field-label">จำนวน</span>
-                  <div className="qty">
-                    <button
-                      type="button"
-                      className="qty-btn"
-                      onClick={() => changeQty(-1)}
-                    >
-                      −
-                    </button>
-                    <input
-                      id="qty"
-                      type="number"
-                      min="1"
-                      value={qty}
-                      onChange={(e) => setQty(clampQtyValue(e.target.value))}
-                    />
-                    <button
-                      type="button"
-                      className="qty-btn"
-                      onClick={() => changeQty(1)}
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-
-                <div className="field field-inline-btn">
-                  <span className="field-label">&nbsp;</span>
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    onClick={handleAddItem}
-                  >
-                    เพิ่มลงในรายการ
-                  </button>
-                </div>
-              </div>
-
-              {borrowError && (
-                <p className="hint error-text">
-                  {borrowError}
-                </p>
-              )}
-
-              {/* Summary cart */}
-              <div className="borrow-summary">
-                <div className="summary-header">
-                  <span>รายการที่จะยืม</span>
-                  <span className="summary-sub">
-                    {items.length === 0 ? "ยังไม่มีรายการ" : `${items.length} รายการ`}
-                  </span>
-                </div>
-                {items.length > 0 && (
-                  <table className="summary-table">
-                    <thead>
-                      <tr>
-                        <th>รายการ</th>
-                        <th>จำนวน</th>
-                        <th>คงเหลือหลังยืม (ประมาณ)</th>
-                        <th />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.map((item) => {
-                        const left = (stockByName[item.equipment] ?? 0) - item.qty;
-                        return (
-                          <tr key={item.equipment}>
-                            <td className="summary-eq">{item.equipment}</td>
-                            <td>{item.qty}</td>
-                            <td>{left < 0 ? 0 : left}</td>
-                            <td>
-                              <button
-                                type="button"
-                                className="link-btn"
-                                onClick={() => handleRemoveItem(item.equipment)}
-                              >
-                                ลบ
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-                <p className="borrow-meta">
-                  ผู้ยืม: <strong>{studentId || "-"}</strong>{" "}
-                  {faculty ? `• ${faculty}` : ""}{" "}
-                  {phone ? `• ${phone}` : ""}
-                </p>
-              </div>
-
-              <div className="form-actions">
+        {/* ชั้นที่ 1 : เลือกประเภทสนาม */}
+        {!currentFacility && (
+          <section className="card" id="panel-top">
+            <h3 className="h3">เลือกประเภทสนาม</h3>
+            <p className="hint top-hint">
+              เลือกประเภทสนามที่ต้องการเช็คอินก่อน จากนั้นกรอกจำนวนผู้ใช้ในแต่ละสนาม
+            </p>
+            <div className="grid-top" id="grid-top">
+              {TOP.map((f) => (
                 <button
-                  id="confirmBtn"
-                  type="submit"
-                  className="confirm"
-                  disabled={borrowLoading}
+                  key={f.k}
+                  className="btn"
+                  type="button"
+                  onClick={() => onTopClick(f)}
                 >
-                  {borrowLoading ? "กำลังทำรายการ…" : "ยืนยันการยืม"}
+                  {FACILITY_LABELS[f.k] || f.name}
                 </button>
-              </div>
-            </form>
-
-            {/* card stock */}
-            <div className="panel stock-card">
-              <h2 className="panel-title">สต็อกอุปกรณ์</h2>
-              <div className="stock-head">
-                <div>อุปกรณ์</div>
-                <div>คงเหลือ</div>
-              </div>
-              <ul className="stock-list" aria-live="polite">
-                {equipments.length === 0 ? (
-                  <li>
-                    <span>ยังไม่มีข้อมูลอุปกรณ์</span>
-                    <b>0</b>
-                  </li>
-                ) : (
-                  equipments.map((e) => (
-                    <li key={e.name}>
-                      <span>{e.name}</span>
-                      <b>{(e.stock ?? 0).toLocaleString()}</b>
-                    </li>
-                  ))
-                )}
-              </ul>
+              ))}
             </div>
           </section>
         )}
 
-        {/* ---------- Return section ---------- */}
-        {activeTab === "return" && (
-          <section id="returnSection">
-            <div className="return-header-row">
-              <h1 className="headline">รายการอุปกรณ์ที่ค้างคืน</h1>
-              <p className="headline-sub">
-                กรองจากรหัสนิสิตหรือวันที่ยืม เพื่อค้นหารายการได้เร็วขึ้น
-              </p>
+        {/* ชั้นที่ 2 : เลือกสนามย่อย (ถ้ามี) + กรอกจำนวนคน */}
+        {currentFacility && (
+          <section className="card" id="panel-outdoor">
+            <div className="toolbar">
+              <button
+                className="btn"
+                type="button"
+                id="btnBack"
+                onClick={() => {
+                  setCurrentFacility(null);
+                  setSelectedSub(null);
+                  setError("");
+                }}
+              >
+                &larr; กลับ
+              </button>
+              <span className="hint">
+                เลือกชนิดสนามหรือกรอกจำนวนผู้ใช้ จากนั้นกด “ตกลง”
+              </span>
             </div>
 
-            <div className="toolbar">
-              <label className="field sid">
-                <span className="legend">รหัสนิสิต</span>
-                <input
-                  className="input"
-                  type="text"
-                  placeholder="พิมพ์รหัสนิสิต…"
-                  value={filterSid}
-                  onChange={(e) => setFilterSid(e.target.value)}
-                />
-              </label>
+            {/* ชื่อสนาม */}
+            <h2
+              id="facilityTitle"
+              className="chip-title"
+              style={{
+                display:
+                  currentFacility === "outdoor" && !selectedSub
+                    ? "none"
+                    : "inline-block",
+              }}
+            >
+              {currentFacility === "outdoor"
+                ? (selectedSub && selectedSub.name) || ""
+                : SINGLE_FACILITY_NAMES[currentFacility] || ""}
+            </h2>
 
-              <label className="field date">
-                <span className="legend">วันที่ยืม</span>
-                <input
-                  className="input"
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                />
-              </label>
+            {/* ปุ่มสนามย่อย (เฉพาะกลางแจ้ง) */}
+            {currentFacility === "outdoor" && (
+              <div className="grid-outdoor" id="grid-outdoor">
+                {OUTDOOR_SUBS.map((s) => {
+                  const key = `outdoor:${s.k}`;
+                  const isDone = !!doneMap[key];
+                  return (
+                    <button
+                      key={s.k}
+                      className={
+                        "btn sport-btn " +
+                        (selectedSub && selectedSub.k === s.k ? "active" : "")
+                      }
+                      type="button"
+                      onClick={() => setSelectedSub(s)}
+                    >
+                      <span>{s.name}</span>
+                      {isDone && (
+                        <span className="sport-done">✔ บันทึกแล้ว</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
 
-              <div className="btns">
-                <button
-                  type="button"
-                  className="btn btn-green"
-                  onClick={() => setFilterSid(filterSid.trim())}
-                >
-                  กรอง
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-purple"
-                  onClick={() => {
-                    setFilterSid("");
-                    setFilterDate("");
-                  }}
-                >
-                  ล้างตัวกรอง
-                </button>
+            {/* error */}
+            {error && (
+              <p
+                id="formError"
+                className="hint"
+                style={{ color: "#c0392b", marginTop: 8 }}
+              >
+                {error}
+              </p>
+            )}
+
+            {/* ฟอร์มจำนวน */}
+            <div className="form-card form-center">
+              <div className="row">
+                <label htmlFor="students">จำนวนนิสิต</label>
+                <input
+                  id="students"
+                  className="input-lg"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={students}
+                  onChange={(e) => setStudents(e.target.value)}
+                  placeholder="จำนวนคน"
+                />
+              </div>
+              <div className="row">
+                <label htmlFor="staff">จำนวนบุคลากร</label>
+                <input
+                  id="staff"
+                  className="input-lg"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={staff}
+                  onChange={(e) => setStaff(e.target.value)}
+                  placeholder="จำนวนคน"
+                />
               </div>
             </div>
 
-            {returnError && (
-              <p className="hint error-text">
-                {returnError}
-              </p>
-            )}
-            {returnLoading && (
-              <p className="hint">กำลังโหลดรายการค้างคืน…</p>
-            )}
-
-            <div className="table-container">
-              <table className="table-return" aria-label="ตารางคืนอุปกรณ์">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>รหัสนิสิต</th>
-                    <th>คณะ</th>
-                    <th>เบอร์โทร</th>
-                    <th>รายการ</th>
-                    <th>จำนวนที่ยืม</th>
-                    <th>จำนวนค้างคืน</th>
-                    <th>จำนวนที่จะคืน</th>
-                    <th>คืน</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.length === 0 ? (
-                    pendingRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: "center" }}>
-                          ยังไม่มีรายการค้างคืน
-                        </td>
-                      </tr>
-                    ) : noFilterResults ? (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: "center" }}>
-                          ไม่พบรายการที่ตรงกับเงื่อนไข
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr>
-                        <td colSpan={9} style={{ textAlign: "center" }}>
-                          ยังไม่มีรายการค้างคืน
-                        </td>
-                      </tr>
-                    )
-                  ) : (
-                    filteredRows.map((row, idx) => (
-                      <ReturnRow
-                        key={row.id ?? `${row.student_id}-${row.equipment}-${idx}`}
-                        index={idx + 1}
-                        row={row}
-                        onReturn={handleReturn}
-                      />
-                    ))
-                  )}
-                </tbody>
-              </table>
+            <div className="action-wrap">
+              <button
+                id="submitBtn"
+                className="btn btn-primary"
+                disabled={!canSubmit}
+                onClick={doCheckin}
+              >
+                ตกลง
+              </button>
             </div>
           </section>
         )}
       </main>
 
-      {/* Sheet borrow */}
-      <div
-        className="sheet"
-        id="sheetBorrow"
-        aria-hidden={showBorrowSheet ? "false" : "true"}
-      >
-        <div className="sheet-card">
-          <div className="sheet-title">
-            บันทึกการยืมเรียบร้อย
-          </div>
-          <div className="sheet-icon">✔</div>
-        </div>
-      </div>
-
-      {/* Sheet return */}
-      <div
-        className="sheet"
-        id="sheetReturn"
-        aria-hidden={showReturnSheet ? "false" : "true"}
-      >
-        <div className="sheet-card">
-          <div className="sheet-title">คืนอุปกรณ์เรียบร้อย</div>
-          <div className="sheet-icon">✔</div>
+      {/* Overlay success */}
+      <div id="overlay" className="overlay" aria-live="polite">
+        <div className="card-ok">
+          <p className="ok-title">
+            เช็คอิน
+            <br />
+            เสร็จสิ้น
+          </p>
+          <div className="ok-icon">✔️</div>
         </div>
       </div>
     </div>
-  );
-}
-
-function ReturnRow({ index, row, onReturn }) {
-  const [val, setVal] = useState(String(row.pending || 1));
-
-  const max = row.pending || 0;
-
-  function handleClick() {
-    let n = parseInt(val, 10);
-    if (!Number.isFinite(n) || n < 1) n = 1;
-    if (n > max) n = max;
-    setVal(String(n));
-    if (max <= 0) return;
-    onReturn(row, n);
-  }
-
-  return (
-    <tr>
-      <td>{index}</td>
-      <td>{row.student_id}</td>
-      <td>{row.faculty || "-"}</td>
-      <td>{row.phone || "-"}</td>
-      <td>{row.equipment}</td>
-      <td>{row.borrowed}</td>
-      <td>{row.pending}</td>
-      <td>
-        <input
-          type="number"
-          min={1}
-          max={max}
-          value={val}
-          onChange={(e) => setVal(e.target.value)}
-          style={{ width: "80px" }}
-        />
-      </td>
-      <td>
-        <button
-          type="button"
-          className="btn-return"
-          disabled={max <= 0}
-          onClick={handleClick}
-        >
-          คืน
-        </button>
-      </td>
-    </tr>
   );
 }

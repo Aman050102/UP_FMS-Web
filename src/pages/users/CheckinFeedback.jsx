@@ -3,10 +3,16 @@ import React, { useEffect, useState } from "react";
 import HeaderUser from "../../components/HeaderUser";
 import "../../styles/checkin_feedback.css";
 
-const BACKEND = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(
-  /\/$/,
-  ""
-);
+const BACKEND = (
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"
+).replace(/\/$/, "");
+
+const FACILITY_LABELS = {
+  outdoor: "สนามกลางแจ้ง",
+  badminton: "สนามแบดมินตัน",
+  track: "สนามลู่-ลาน",
+  pool: "สระว่ายน้ำ",
+};
 
 function formatThaiDate(date) {
   const parts = new Intl.DateTimeFormat("th-TH", {
@@ -22,6 +28,7 @@ function formatThaiDate(date) {
 }
 
 export default function CheckinFeedback() {
+  const [facility, setFacility] = useState(null);
   const [staffName, setStaffName] = useState("ผู้ใช้งาน");
   const [problems, setProblems] = useState("");
   const [detail, setDetail] = useState("");
@@ -36,13 +43,62 @@ export default function CheckinFeedback() {
   const todayStr = today.toISOString().slice(0, 10);
   const todayThai = formatThaiDate(today);
 
-  // ตรวจสิทธิ์เข้าแบบประเมิน: ต้องเช็คอินครบทุกสนามก่อน
+  // ตรวจสิทธิ์เข้าแบบประเมิน: ต้องเช็คอิน "ประเภทสนามนี้" ครบก่อน
   useEffect(() => {
-    const doneDate = localStorage.getItem("checkin_all_done_date");
-    if (!doneDate || doneDate !== todayStr) {
-      alert("กรุณาเช็คอินสนามครบทุกประเภทของวันนี้ก่อน แล้วจึงทำแบบประเมิน");
+    const search = new URLSearchParams(window.location.search);
+    const facParam = search.get("facility") || "outdoor";
+    const allowed = ["outdoor", "badminton", "track", "pool"];
+    const fac = allowed.includes(facParam) ? facParam : "outdoor";
+    setFacility(fac);
+
+    // ตรวจว่าเช็คอินครบแล้วหรือยัง
+    let canAccess = false;
+    try {
+      const rawDone = localStorage.getItem("checkin_facility_done");
+      if (rawDone) {
+        const parsed = JSON.parse(rawDone);
+        if (
+          parsed.date === todayStr &&
+          parsed.facilities &&
+          parsed.facilities[fac]
+        ) {
+          canAccess = true;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    if (!canAccess) {
+      alert(
+        "กรุณาเช็คอินสนามประเภทนี้ให้ครบก่อน แล้วจึงทำแบบประเมิน"
+      );
       window.location.href = "/checkin";
       return;
+    }
+
+    // ถ้าเคยส่งแบบประเมินของสนามนี้แล้วในวันนี้ จะเตือน
+    try {
+      const rawFb = localStorage.getItem("checkin_facility_feedback");
+      if (rawFb) {
+        const parsed = JSON.parse(rawFb);
+        if (
+          parsed.date === todayStr &&
+          parsed.facilities &&
+          parsed.facilities[fac]
+        ) {
+          const label = FACILITY_LABELS[fac] || "สนามนี้";
+          const goBack = window.confirm(
+            `วันนี้ส่งแบบประเมินสำหรับ${label}แล้ว\nต้องการกลับไปหน้าเช็คอินหรือไม่?`
+          );
+          if (goBack) {
+            window.location.href = "/checkin";
+            return;
+          }
+        }
+      }
+    } catch {
+      /* ignore */
     }
 
     // ดึงชื่อผู้ใช้จาก global / localStorage
@@ -76,9 +132,13 @@ export default function CheckinFeedback() {
     try {
       setSubmitting(true);
 
-      // ตัวอย่างเก็บเป็น FormData เผื่ออนาคตส่งเข้า backend
       const formData = new FormData();
       formData.append("date", todayStr);
+      formData.append("facility", facility || "");
+      formData.append(
+        "facility_label",
+        FACILITY_LABELS[facility] || "สนามกีฬา"
+      );
       formData.append("staff_name", staffName);
       formData.append("problems", problems);
       formData.append("detail", detail);
@@ -88,13 +148,41 @@ export default function CheckinFeedback() {
         formData.append("register_file", file);
       }
 
-      // ตอนนี้ยังไม่ยิง backend จริง (กัน 404)
-      // ถ้าจะใช้จริงค่อยเปลี่ยนเป็น fetch ไป endpoint:
-      // await fetch(`${BACKEND}/api/checkin/feedback/`, { method: "POST", body: formData });
+      // TODO: ถ้า backend พร้อมให้ยิง endpoint นี้
+      // await fetch(`${BACKEND}/api/checkin/feedback/`, {
+      //   method: "POST",
+      //   body: formData,
+      // });
 
-      console.log("CHECKIN_FEEDBACK_FORM", Object.fromEntries(formData.entries()));
+      console.log(
+        "CHECKIN_FEEDBACK_FORM",
+        Object.fromEntries(formData.entries())
+      );
 
-      setOk("บันทึกแบบประเมินเรียบร้อย ขอบคุณสำหรับข้อมูล :)");
+      // mark ว่าวันนี้ประเมินสนามนี้แล้ว
+      try {
+        let facilities = {};
+        const rawFb = localStorage.getItem("checkin_facility_feedback");
+        if (rawFb) {
+          const parsed = JSON.parse(rawFb);
+          if (
+            parsed.date === todayStr &&
+            typeof parsed.facilities === "object"
+          ) {
+            facilities = parsed.facilities;
+          }
+        }
+        facilities[facility] = true;
+        localStorage.setItem(
+          "checkin_facility_feedback",
+          JSON.stringify({ date: todayStr, facilities })
+        );
+      } catch {
+        /* ignore */
+      }
+
+      const label = FACILITY_LABELS[facility] || "สนามกีฬา";
+      setOk(`บันทึกแบบประเมินสนาม${label}เรียบร้อย ขอบคุณสำหรับข้อมูล :)`);
       setProblems("");
       setDetail("");
       setSuggest("");
@@ -114,6 +202,8 @@ export default function CheckinFeedback() {
   const displayName =
     window.CURRENT_USER || localStorage.getItem("display_name") || "ผู้ใช้งาน";
 
+  const facilityLabel = FACILITY_LABELS[facility] || "สนามกีฬา";
+
   return (
     <div data-page="checkin-feedback" className="wrap">
       <HeaderUser displayName={displayName} BACKEND={BACKEND} />
@@ -121,9 +211,15 @@ export default function CheckinFeedback() {
         <section className="fb-card" aria-label="แบบประเมินปัญหาประจำวัน">
           {/* หัวข้อ */}
           <header className="fb-header">
-            <h1>แบบประเมินปัญหาการใช้งานสนามกีฬา (รายวัน)</h1>
+            <h1>
+              แบบประเมินปัญหาการใช้งาน{facilityLabel} (รายวัน)
+            </h1>
             <p className="fb-subtitle">
-              โปรดบันทึกปัญหาและข้อเสนอแนะหลังจากเช็คอินครบทุกสนามของวันนี้
+              โปรดบันทึกปัญหาและข้อเสนอแนะหลังจากเช็คอินครบสำหรับ
+              {" "}
+              {facilityLabel}
+              {" "}
+              ในวันนี้
             </p>
           </header>
 
@@ -140,7 +236,11 @@ export default function CheckinFeedback() {
               </div>
             </div>
             <p className="fb-note">
-              * แบบประเมินนี้ใช้สำหรับเก็บข้อมูลปัญหาในแต่ละวัน และช่วยปรับปรุงการให้บริการสนามกีฬา
+              * แบบประเมินนี้ใช้สำหรับเก็บข้อมูลปัญหาของ
+              {" "}
+              {facilityLabel}
+              {" "}
+              ในแต่ละวัน และช่วยปรับปรุงการให้บริการสนามกีฬา
             </p>
           </section>
 

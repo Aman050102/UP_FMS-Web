@@ -66,6 +66,34 @@ body[data-page="checkin"] header.topbar {
   margin: 6px auto 0;
 }
 
+/* ===== banner nag ทำแบบประเมิน ===== */
+[data-page="checkin"] .feedback-alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px auto 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #fde68a, #f97316);
+  color: #4b1c00;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(249, 115, 22, 0.4);
+}
+
+[data-page="checkin"] .feedback-alert-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #ec4899;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(190, 24, 93, 0.4);
+}
+
 /* การ์ด */
 [data-page="checkin"] .card {
   background: var(--card);
@@ -83,12 +111,15 @@ body[data-page="checkin"] header.topbar {
 
 /* หัวข้อ/คำใบ้ */
 [data-page="checkin"] .h3 {
-  margin: 2px 0 10px;
+  margin: 2px 0 4px;
   font-size: clamp(18px, 2.2vw, 22px);
 }
 [data-page="checkin"] .hint {
   color: var(--muted);
   font-size: 14px;
+}
+[data-page="checkin"] .top-hint {
+  margin-bottom: 16px;
 }
 
 /* Toolbar ชั้นที่ 2 */
@@ -99,14 +130,25 @@ body[data-page="checkin"] header.topbar {
   margin-bottom: 10px;
 }
 
-/* ===== ปุ่มเลือกสนาม ===== */
-[data-page="checkin"] .grid {
+/* ===== ปุ่มเลือกสนาม (ชั้นแรก) ===== */
+[data-page="checkin"] .grid-top {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+[data-page="checkin"] .grid-top > * {
+  min-height: 72px;
+}
+
+/* ===== ปุ่มสนามย่อยกลางแจ้ง ===== */
+[data-page="checkin"] .grid-outdoor {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 8px;
 }
-[data-page="checkin"] .grid > * {
-  min-height: 64px;
+[data-page="checkin"] .grid-outdoor > * {
+  min-height: 60px;
 }
 
 /* ปุ่มทั่วไป */
@@ -115,7 +157,7 @@ body[data-page="checkin"] header.topbar {
   align-items: center;
   justify-content: center;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: 18px;
   border: 1px solid var(--divider);
   background: #fff;
   font-weight: 800;
@@ -157,8 +199,9 @@ body[data-page="checkin"] header.topbar {
   background: #fff;
   border: 1px solid var(--divider);
   border-radius: 18px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   font-weight: 800;
+  justify-content: space-between;
 }
 [data-page="checkin"] .sport-btn:hover {
   background: #f3e9ff;
@@ -170,6 +213,12 @@ body[data-page="checkin"] header.topbar {
   background: #b786f4;
   border-color: #b786f4;
   color: #fff;
+}
+[data-page="checkin"] .sport-done {
+  margin-left: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
 }
 
 /* ฟอร์ม */
@@ -252,5 +301,24 @@ body[data-page="checkin"] header.topbar {
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
+  }
+}
+
+/* responsive */
+@media (max-width: 720px) {
+  [data-page="checkin"] main {
+    padding: 16px;
+  }
+
+  [data-page="checkin"] .grid-top {
+    grid-template-columns: 1fr;
+  }
+
+  [data-page="checkin"] .grid-outdoor {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-page="checkin"] .row {
+    grid-template-columns: 1fr;
   }
 }
