@@ -1,14 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Link } from "react-router-dom";
 import HeaderStaff from "../../components/HeaderStaff";
 import "../../styles/staff_ledger.css";
 
-const BACKEND =
+// ---------------- Backend ----------------
+const BACKEND: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ||
   "http://localhost:8000";
 
 const API_RECORDS = `${BACKEND}/api/staff/borrow-records/`;
 
-// ---------- Types ----------
+// ---------------- Types ----------------
 interface LedgerRow {
   id?: number;
   time?: string;
@@ -29,18 +31,18 @@ interface LedgerDay {
   rows: LedgerRow[];
 }
 
-// ---------- Component ----------
+// ---------------- Component ----------------
 export default function StaffBorrowLedgerPage() {
-  const [displayName, setDisplayName] = useState<string>(
+  const [displayName] = useState<string>(
     localStorage.getItem("display_name") || "เจ้าหน้าที่"
   );
 
   const [studentId, setStudentId] = useState<string>("");
   const [datePick, setDatePick] = useState<string>("");
-  const [info, setInfo] = useState<string>("—");
 
   const [days, setDays] = useState<LedgerDay[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [info, setInfo] = useState<string>("—");
   const [error, setError] = useState<string>("");
 
   const todayISO = useMemo(
@@ -48,7 +50,7 @@ export default function StaffBorrowLedgerPage() {
     []
   );
 
-  // set body theme
+  // mark page (ใช้กับ css)
   useEffect(() => {
     document.body.setAttribute("data-page", "staff-borrow-ledger");
     return () => {
@@ -56,38 +58,19 @@ export default function StaffBorrowLedgerPage() {
     };
   }, []);
 
-  // load staff info
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const res = await fetch(`${BACKEND}/auth/me/`, {
-          credentials: "include",
-        });
-        if (!res.ok) throw new Error();
-        const data = await res.json();
-        if (data?.ok && data?.username) {
-          setDisplayName(data.username);
-          localStorage.setItem("display_name", data.username);
-        } else {
-          window.location.href = "/login?role=staff";
-        }
-      } catch {
-        window.location.href = "/login?role=staff";
-      }
-    };
-    loadUser();
-  }, []);
-
+  // default date = today
   useEffect(() => {
     setDatePick(todayISO);
   }, [todayISO]);
 
+  // auto load เมื่อเปลี่ยนวันที่
   useEffect(() => {
     if (datePick) fetchRecords();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datePick]);
 
-  async function fetchRecords() {
+  // ---------------- Data ----------------
+  async function fetchRecords(): Promise<void> {
     setLoading(true);
     setError("");
     setInfo("กำลังโหลด...");
@@ -98,14 +81,15 @@ export default function StaffBorrowLedgerPage() {
       if (datePick) params.set("date", datePick);
 
       const res = await fetch(`${API_RECORDS}?${params.toString()}`, {
+        method: "GET",
         credentials: "include",
         headers: { Accept: "application/json" },
       });
 
-      if (!res.ok) throw new Error("โหลดข้อมูลไม่สำเร็จ");
+      if (!res.ok) throw new Error("load failed");
 
       const data = await res.json();
-      const list: LedgerDay[] = data?.days || data?.data || [];
+      const list: LedgerDay[] = data?.days || [];
 
       setDays(list);
 
@@ -113,7 +97,7 @@ export default function StaffBorrowLedgerPage() {
         setInfo("ไม่พบข้อมูลในเงื่อนไขที่เลือก");
       } else {
         const total = list.reduce(
-          (sum, d) => sum + (d.total ?? 0),
+          (sum, d) => sum + (d.total ?? d.rows.length),
           0
         );
         setInfo(`พบทั้งหมด ${total} รายการ ใน ${list.length} วัน`);
@@ -128,6 +112,7 @@ export default function StaffBorrowLedgerPage() {
     }
   }
 
+  // ---------------- UI ----------------
   return (
     <div className="staff-ledger-page">
       <HeaderStaff displayName={displayName} BACKEND={BACKEND} />
@@ -136,14 +121,14 @@ export default function StaffBorrowLedgerPage() {
         <nav className="mainmenu" aria-label="เมนูหลัก">
           <ul>
             <li>
-              <a className="tab" href="/staff_equipment">
+              <Link className="tab" to="/staff/equipment">
                 จัดการอุปกรณ์กีฬา
-              </a>
+              </Link>
             </li>
             <li>
-              <a className="tab active" href="/staff/borrow-ledger">
+              <Link className="tab active" to="/staff/borrow-ledger">
                 ✓ บันทึกการยืม-คืน
-              </a>
+              </Link>
             </li>
           </ul>
         </nav>
@@ -155,7 +140,9 @@ export default function StaffBorrowLedgerPage() {
             <span>รหัสนิสิต</span>
             <input
               value={studentId}
-              onChange={(e) => setStudentId(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setStudentId(e.target.value)
+              }
               placeholder="เช่น 65000001"
             />
           </label>
@@ -165,15 +152,21 @@ export default function StaffBorrowLedgerPage() {
             <input
               type="date"
               value={datePick}
-              onChange={(e) => setDatePick(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setDatePick(e.target.value)
+              }
             />
           </label>
 
-          <button className="btn primary" onClick={fetchRecords}>
+          <button className="btn primary" onClick={fetchRecords} type="button">
             ค้นหา
           </button>
 
-          <button className="btn" onClick={() => setDatePick(todayISO)}>
+          <button
+            className="btn"
+            onClick={() => setDatePick(todayISO)}
+            type="button"
+          >
             วันนี้
           </button>
 
@@ -202,7 +195,7 @@ export default function StaffBorrowLedgerPage() {
   );
 }
 
-// ---------- Sub Component ----------
+// ---------------- Sub Component ----------------
 function DayCard({ day }: { day: LedgerDay }) {
   const rows = day.rows || [];
   const total = day.total ?? rows.length;
