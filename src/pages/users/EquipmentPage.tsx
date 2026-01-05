@@ -1,309 +1,202 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useState } from "react";
+import {
+  Package, Search, Plus, Minus, Trash2, Smartphone, Building2, User,
+  ChevronDown, ChevronUp, History, CheckCircle2, Dribbble, Trophy, Activity
+} from "lucide-react";
 import "../../styles/equipment.css";
 
-/* ===== helper ===== */
-function getCookie(name: string): string | null {
-  const v = `; ${document.cookie}`;
-  const p = v.split(`; ${name}=`);
-  if (p.length === 2) return p.pop()?.split(";").shift() || null;
-  return null;
-}
-
 export default function EquipmentPage() {
-  const BACKEND = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8000").replace(
-    /\/$/,
-    ""
-  );
+  const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">("borrow");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const BORROW_API = `${BACKEND}/api/equipment/borrow/`;
-  const RETURN_API = `${BACKEND}/api/equipment/return/`;
-  const STOCKS_API = `${BACKEND}/api/equipment/stock/`;
-  const PENDING_RETURNS_API = `${BACKEND}/api/equipment/pending-returns/`;
-  const FACULTY_CHECK_API = `${BACKEND}/api/equipment/faculty-from-student/`;
+  // --- States ---
+  const [studentInfo, setStudentInfo] = useState({ id: "", name: "", faculty: "", phone: "" });
+  const [borrowItems, setBorrowItems] = useState<{ name: string, qty: number }[]>([]);
+  const [returnQtys, setReturnQtys] = useState<{ [key: string]: number }>({});
 
-  const csrftoken = getCookie("csrftoken") || "";
+  // --- Mock Data (ข้อมูลจำลองป้องกันหน้าขาว) ---
+  const stocks = [
+    { name: "ลูกบาสเกตบอล", stock: 10 },
+    { name: "ไม้แบดมินตัน", stock: 15 },
+    { name: "ลูกฟุตบอล", stock: 5 }
+  ];
 
-  const [activeTab, setActiveTab] = useState("borrow");
-
-  // ---------- Borrow state ----------
-  const [equipments, setEquipments] = useState<any[]>([]);
-  const [studentId, setStudentId] = useState("");
-  const [faculty, setFaculty] = useState("");
-  const [facultyLocked, setFacultyLocked] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
-  const [items, setItems] = useState([{ equip: "", qty: 1 }]);
-  const [studentError, setStudentError] = useState("");
-  const [borrowLoading, setBorrowLoading] = useState(false);
-  const [borrowError, setBorrowError] = useState("");
-  const [showBorrowSheet, setShowBorrowSheet] = useState(false);
-
-  // ---------- Return state ----------
-  const [pendingRows, setPendingRows] = useState<any[]>([]);
-  const [returnLoading, setReturnLoading] = useState(false);
-  const [returnError, setReturnError] = useState("");
-  const [showReturnSheet, setShowReturnSheet] = useState(false);
-  const [filterSid, setFilterSid] = useState("");
-  const [filterDate, setFilterDate] = useState("");
-
-  // ---------- derived ----------
-  const stockByName = useMemo(() => {
-    const m: any = {};
-    equipments.forEach((e) => {
-      m[e.name] = e.stock ?? 0;
-    });
-    return m;
-  }, [equipments]);
-
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
-
-  const filteredRows = useMemo(() => {
-    return pendingRows.filter((r) => {
-      const sidOk = !filterSid || String(r.student_id || "").includes(filterSid);
-      const dateOk = !filterDate || r.borrow_date === filterDate;
-      return sidOk && dateOk;
-    });
-  }, [pendingRows, filterSid, filterDate]);
-
-  const hasFilter = !!filterSid || !!filterDate;
-  const noFilterResults = hasFilter && filteredRows.length === 0 && pendingRows.length > 0;
-
-  // ---------- helper ----------
-  async function fetchJSON(url: string, options = {}) {
-    const resp = await fetch(url, options);
-    const data = await resp.json().catch(() => ({}));
-    if (!resp.ok || data.ok === false) {
-      const msg = data.message || data.error || `HTTP ${resp.status}`;
-      throw new Error(msg);
+  const pendingReturns = [
+    {
+      id: "65000001",
+      name: "อามาน อาลีแก",
+      items: [
+        { name: "ลูกบาสเกตบอล", qty: 2, totalBorrowed: 2, status: "pending" },
+        { name: "ไม้แบดมินตัน", qty: 1, totalBorrowed: 1, status: "pending" }
+      ]
     }
-    return data;
-  }
+  ];
 
-  function openSheet(setter: any) {
-    setter(true);
-    setTimeout(() => setter(false), 900);
-  }
+  const borrowHistory = [
+    { id: "65000001", name: "อามาน อาลีแก", item: "นกหวีด", qty: 1, date: "02/01/2024", status: "returned" },
+    { id: "65000002", name: "สมชาย ทดสอบ", item: "ลูกฟุตบอล", qty: 2, date: "01/01/2024", status: "returned" }
+  ];
 
-  // ---------- initial load ----------
-  useEffect(() => {
-    document.body.dataset.page = "equipment";
-    try {
-      const sid = localStorage.getItem("sfms_sid");
-      const fac = localStorage.getItem("sfms_fac");
-      const ph = localStorage.getItem("sfms_phone");
-      if (sid) setStudentId(sid);
-      if (fac) setFaculty(fac);
-      if (ph) setPhone(ph);
-    } catch { /* ignore */ }
+  // --- Helpers ---
+  const getSportIcon = (name: string) => {
+    const n = (name || "").toLowerCase();
+    if (n.includes("บาส")) return <Dribbble size={20} className="icon-sport" />;
+    if (n.includes("แบด") || n.includes("ไม้")) return <Trophy size={20} className="icon-sport" />;
+    if (n.includes("บอล") || n.includes("ฟุต")) return <Activity size={20} className="icon-sport" />;
+    return <Package size={20} className="icon-sport" />;
+  };
 
-    setFilterDate(todayISO);
-
-    (async () => {
-      try {
-        const data = await fetchJSON(STOCKS_API, { credentials: "include" });
-        setEquipments(data.equipments || []);
-        if (data.equipments && data.equipments.length > 0) {
-          setItems([{ equip: data.equipments[0].name, qty: 1 }]);
-        }
-      } catch (e) { console.warn("Load stock failed", e); }
-    })();
-
-    (async () => {
-      setReturnLoading(true);
-      try {
-        const data = await fetchJSON(PENDING_RETURNS_API, { credentials: "include" });
-        const rows = (data.rows || []).map((r: any, idx: number) => ({
-          id: r.id ?? idx,
-          student_id: r.student_id,
-          faculty: r.faculty,
-          phone: r.phone || "",
-          equipment: r.equipment,
-          borrowed: r.borrowed ?? r.quantity_borrowed ?? 0,
-          pending: r.remaining ?? r.quantity_pending ?? 0,
-          borrow_date: r.borrow_date || todayISO,
-        }));
-        setPendingRows(rows);
-      } catch (e: any) {
-        setReturnError(e.message || "โหลดรายการค้างคืนไม่สำเร็จ");
-      } finally { setReturnLoading(false); }
-    })();
-  }, [BACKEND, STOCKS_API, PENDING_RETURNS_API, todayISO]);
-
-  // ---------- handlers ----------
-  async function handleCheckFaculty() {
-    const sid = studentId.trim();
-    if (!/^6\d{7}$/.test(sid)) { setFacultyLocked(false); return; }
-    try {
-      const url = `${FACULTY_CHECK_API}?student_id=${encodeURIComponent(sid)}`;
-      const data = await fetchJSON(url, { credentials: "include" });
-      if (data.faculty) { setFaculty(data.faculty); setFacultyLocked(true); }
-      else { setFacultyLocked(false); }
-    } catch { setFacultyLocked(false); }
-  }
-
-  function handleStudentChange(e: any) {
-    const digits = (e.target.value || "").replace(/\D/g, "").slice(0, 8);
-    setStudentId(digits);
-    if (digits.length === 8 && !/^6\d{7}$/.test(digits)) setStudentError("ต้องขึ้นต้นด้วยเลข 6 และมีทั้งหมด 8 หลัก");
-    else setStudentError("");
-    if (digits.length === 0) setFacultyLocked(false);
-  }
-
-  function handlePhoneChange(e: any) {
-    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-    setPhone(digits);
-    if (digits.length > 0 && digits.length < 10) setPhoneError("เบอร์โทรไม่ถูกต้อง");
-    else setPhoneError("");
-  }
-
-  function updateItemQty(idx: number, value: string) {
-    let n = parseInt(value, 10);
-    if (!Number.isFinite(n) || n < 1) n = 1;
-    setItems((prev) => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], qty: n };
-      return next;
-    });
-  }
-
-  async function handleBorrow() {
-    setBorrowError("");
-    const sid = studentId.trim();
-    const ph = phone.trim();
-
-    if (!/^6\d{7}$/.test(sid)) { setBorrowError("รหัสนิสิตไม่ถูกต้อง"); return; }
-    if (ph.length !== 10) { setBorrowError("กรุณากรอกเบอร์โทร 10 หลัก"); return; }
-
-    setBorrowLoading(true);
-    try {
-      for (const it of items) {
-        await fetchJSON(BORROW_API, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
-          body: JSON.stringify({ equipment: it.equip, qty: it.qty, student_id: sid, faculty, phone: ph }),
-        });
-      }
-      openSheet(setShowBorrowSheet);
-      setActiveTab("return");
-    } catch (e: any) { setBorrowError(e.message); }
-    finally { setBorrowLoading(false); }
-  }
-
-  async function handleReturn(row: any, qtyReturn: number) {
-    try {
-      await fetchJSON(RETURN_API, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": csrftoken },
-        body: JSON.stringify({ equipment: row.equipment, qty: qtyReturn, student_id: row.student_id, faculty: row.faculty, phone: row.phone }),
-      });
-      openSheet(setShowReturnSheet);
-      // Update UI local state logic here...
-      window.location.reload(); // ง่ายที่สุดเพื่อให้ Stock ตรงกับ DB
-    } catch (e: any) { alert(e.message); }
-  }
+  const handleUpdateBorrowQty = (itemName: string, delta: number) => {
+    const exist = borrowItems.find(i => i.name === itemName);
+    if (exist) {
+      const newQty = exist.qty + delta;
+      if (newQty <= 0) setBorrowItems(borrowItems.filter(i => i.name !== itemName));
+      else setBorrowItems(borrowItems.map(i => i.name === itemName ? { ...i, qty: newQty } : i));
+    } else if (delta > 0) {
+      setBorrowItems([...borrowItems, { name: itemName, qty: 1 }]);
+    }
+  };
 
   return (
     <div className="equipment-container">
-      <main className="wrap equipment-wrap">
-        <div className="modebar">
-          <button className={`mode ${activeTab === "borrow" ? "active" : ""}`} onClick={() => setActiveTab("borrow")}>ยืมอุปกรณ์</button>
-          <button className={`mode ${activeTab === "return" ? "active" : ""}`} onClick={() => setActiveTab("return")}>คืนอุปกรณ์</button>
-        </div>
+      {/* Tabs Navigation */}
+      <nav className="tab-header">
+        <button className={activeTab === "borrow" ? "active" : ""} onClick={() => setActiveTab("borrow")}>ยืมอุปกรณ์</button>
+        <button className={activeTab === "return" ? "active" : ""} onClick={() => setActiveTab("return")}>คืนอุปกรณ์</button>
+        <button className={activeTab === "history" ? "active" : ""} onClick={() => setActiveTab("history")}>ประวัติการยืม-คืน</button>
+      </nav>
 
-        {activeTab === "borrow" ? (
-          <section id="borrowSection" className="grid">
-            <div className="panel stock-card">
-              <div className="stock-head"><div>อุปกรณ์</div><div>คงเหลือ</div></div>
-              <ul className="stock-list">
-                {equipments.map((e) => <li key={e.name}><span>{e.name}</span><b>{e.stock}</b></li>)}
-              </ul>
-            </div>
-
-            <form className="panel form-card" onSubmit={(e) => { e.preventDefault(); handleBorrow(); }}>
-              <label className="field">
-                <span className="field-label">รหัสนิสิต</span>
-                <input className="input" maxLength={8} value={studentId} onChange={handleStudentChange} onBlur={handleCheckFaculty} />
-                {studentError && <small className="field-error">{studentError}</small>}
-              </label>
-
-              <label className="field">
-                <span className="field-label">คณะ</span>
-                <select className="input" value={faculty} onChange={(e) => setFaculty(e.target.value)} disabled={facultyLocked}>
-                  <option value="">เลือกคณะ</option>
-                  <option value="คณะเทคโนโลยีสารสนเทศ">คณะเทคโนโลยีสารสนเทศ</option>
-                  <option value="คณะพยาบาลศาสตร์">คณะพยาบาลศาสตร์</option>
-                </select>
-              </label>
-
-              <label className="field">
-                <span className="field-label">เบอร์โทร</span>
-                <input className="input" maxLength={10} value={phone} onChange={handlePhoneChange} />
-              </label>
-
-              <div className="field">
-                <span className="field-label">รายการอุปกรณ์</span>
-                {items.map((it, idx) => (
-                  <div key={idx} className="multi-row">
-                    <select className="input" value={it.equip} onChange={(e) => {
-                      const next = [...items]; next[idx].equip = e.target.value; setItems(next);
-                    }}>
-                      <option value="">เลือกอุปกรณ์</option>
-                      {equipments.map(e => <option key={e.name} value={e.name}>{e.name}</option>)}
+      <div className="content-layout">
+        {/* --- แท็บยืมอุปกรณ์ --- */}
+        {activeTab === "borrow" && (
+          <div className="borrow-vertical-flow">
+            <section className="panel info-section">
+              <h4 className="title-sm"><User size={18} /> ข้อมูลผู้ยืม</h4>
+              <div className="borrow-form-inputs">
+                <div className="input-row">
+                  <div className="field-group">
+                    <label>ชื่อ-นามสกุล</label>
+                    <input type="text" placeholder="ชื่อ-นามสกุล" value={studentInfo.name} onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} />
+                  </div>
+                  <div className="field-group">
+                    <label>รหัสนิสิต</label>
+                    <input type="text" placeholder="รหัส 8 หลัก" maxLength={8} value={studentInfo.id} onChange={e => setStudentInfo({...studentInfo, id: e.target.value})} />
+                  </div>
+                </div>
+                <div className="input-row">
+                  <div className="field-group">
+                    <label>คณะ / หน่วยงาน</label>
+                    <select value={studentInfo.faculty} onChange={e => setStudentInfo({...studentInfo, faculty: e.target.value})}>
+                      <option value="">เลือกคณะ</option>
+                      <option value="IT">เทคโนโลยีสารสนเทศ</option>
+                      <option value="Nurse">พยาบาลศาสตร์</option>
                     </select>
-                    <input type="number" className="input" style={{width: '70px'}} value={it.qty} onChange={(e) => updateItemQty(idx, e.target.value)} />
+                  </div>
+                  <div className="field-group">
+                    <label>เบอร์โทรศัพท์</label>
+                    <input type="text" placeholder="08XXXXXXXX" maxLength={10} value={studentInfo.phone} onChange={e => setStudentInfo({...studentInfo, phone: e.target.value})} />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className="panel stock-section">
+              <h4 className="title-sm"><Package size={18} /> เลือกอุปกรณ์จากสต็อก</h4>
+              <div className="stock-grid-minimal">
+                {stocks.map(item => (
+                  <div key={item.name} className="stock-card-mini">
+                    <div className="info-with-icon">
+                      {getSportIcon(item.name)}
+                      <div className="txt"><strong>{item.name}</strong><small>คงเหลือ {item.stock}</small></div>
+                    </div>
+                    <div className="qty-picker">
+                      <button className="q-btn" onClick={() => handleUpdateBorrowQty(item.name, -1)}><Minus size={14} /></button>
+                      <span className="q-val">{borrowItems.find(i => i.name === item.name)?.qty || 0}</span>
+                      <button className="q-btn" onClick={() => handleUpdateBorrowQty(item.name, 1)}><Plus size={14} /></button>
+                    </div>
                   </div>
                 ))}
               </div>
+            </section>
 
-              {borrowError && <p className="field-error">{borrowError}</p>}
-              <button type="submit" className="confirm" disabled={borrowLoading}>
-                {borrowLoading ? "กำลังประมวลผล..." : "ยืนยันการยืม"}
-              </button>
-            </form>
-          </section>
-        ) : (
-          <section id="returnSection">
-            <h2 className="headline">รายการค้างคืน</h2>
-            <div className="table-container">
-              <table className="table-return">
+            {borrowItems.length > 0 && (
+              <section className="panel summary-section">
+                <h4 className="title-sm">รายการที่เลือกยืม</h4>
+                <div className="summary-list">
+                  {borrowItems.map((item, idx) => (
+                    <div key={idx} className="summary-row">
+                      <div className="summary-item-name">{getSportIcon(item.name)}<span>{item.name} x {item.qty} รายการ</span></div>
+                      <button className="remove-btn" onClick={() => handleUpdateBorrowQty(item.name, -item.qty)}><Trash2 size={14} /></button>
+                    </div>
+                  ))}
+                </div>
+                <button className="submit-btn-large">ยืนยันการยืมอุปกรณ์</button>
+              </section>
+            )}
+          </div>
+        )}
+
+        {/* --- แท็บคืนอุปกรณ์ --- */}
+        {activeTab === "return" && (
+          <div className="return-layout">
+            <div className="search-bar"><Search size={18} /><input placeholder="ค้นหาด้วยรหัสหรือชื่อ..." /></div>
+            <div className="accordion-list">
+              {pendingReturns.map(user => (
+                <div key={user.id} className={`acc-item ${expandedId === user.id ? 'open' : ''}`}>
+                  <div className="acc-header" onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}>
+                    <div className="header-text"><strong>{user.id}</strong> <span>{user.name}</span></div>
+                    {expandedId === user.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  </div>
+                  <div className="acc-body">
+                    <table className="return-table-detail">
+                      <thead>
+                        <tr><th>รายการ</th><th>ยืม</th><th>ค้าง</th><th>ระบุคืน</th><th>จัดการ</th></tr>
+                      </thead>
+                      <tbody>
+                        {user.items.map((item, i) => (
+                          <tr key={i}>
+                            <td data-label="รายการ"><div className="item-with-icon-only">{getSportIcon(item.name)}<span>{item.name}</span></div></td>
+                            <td data-label="ยืม">{item.totalBorrowed}</td>
+                            <td data-label="ค้าง" className="txt-pending">{item.qty}</td>
+                            <td data-label="ระบุคืน"><input type="number" className="input-qty-return" defaultValue={item.qty} /></td>
+                            <td data-label="จัดการ"><button className="btn-return-line">ยืนยัน</button></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="return-footer-actions"><button className="btn-return-all-main">คืนที่เหลือทั้งหมด</button></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- แท็บประวัติการยืม-คืน --- */}
+        {activeTab === "history" && (
+          <div className="history-layout">
+            <div className="panel history-table-panel">
+              <h4 className="title-sm"><History size={18} /> รายการประวัติทั้งหมด</h4>
+              <table className="history-table">
                 <thead>
-                  <tr>
-                    <th>นิสิต</th><th>อุปกรณ์</th><th>ค้าง</th><th>คืน</th><th>ปุ่ม</th>
-                  </tr>
+                  <tr><th>วันที่คืน</th><th>ผู้ยืม</th><th>รายการ</th><th>จำนวน</th><th>สถานะ</th></tr>
                 </thead>
                 <tbody>
-                  {filteredRows.map((row, idx) => (
-                    <ReturnRow key={idx} row={row} onReturn={handleReturn} />
+                  {borrowHistory.map((h, i) => (
+                    <tr key={i}>
+                      <td data-label="วันที่">{h.date}</td>
+                      <td data-label="ผู้ยืม"><strong>{h.id}</strong><br /><small>{h.name}</small></td>
+                      <td data-label="รายการ"><div className="item-with-icon-only">{getSportIcon(h.item)}<span>{h.item}</span></div></td>
+                      <td data-label="จำนวน">{h.qty} ชิ้น</td>
+                      <td data-label="สถานะ"><span className="status-complete"><CheckCircle2 size={16} /> คืนแล้ว</span></td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          </section>
+          </div>
         )}
-      </main>
-
-      {/* Sheets */}
-      {showBorrowSheet && <div className="sheet show"><div className="sheet-card">ยืมสำเร็จ ✔</div></div>}
-      {showReturnSheet && <div className="sheet show"><div className="sheet-card">คืนสำเร็จ ✔</div></div>}
+      </div>
     </div>
-  );
-}
-
-function ReturnRow({ row, onReturn }: any) {
-  const [val, setVal] = useState(row.pending);
-  return (
-    <tr>
-      <td>{row.student_id}</td>
-      <td>{row.equipment}</td>
-      <td>{row.pending}</td>
-      <td>
-        <input type="number" value={val} onChange={(e) => setVal(parseInt(e.target.value))} style={{width: '60px'}} />
-      </td>
-      <td>
-        <button className="btn-return" onClick={() => onReturn(row, val)}>คืน</button>
-      </td>
-    </tr>
   );
 }

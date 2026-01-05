@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { CheckCircle, Trophy } from "lucide-react"; // ใช้ไอคอนชุดเดียวกับ Sidebar
 import "../../styles/menu.css";
-import "../../styles/tiles.css";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -13,13 +13,22 @@ export default function UserMenu() {
 
   return (
     <div className="menu-container">
-      <div className="section-title">เมนูหลักสำหรับ {displayName}</div>
       <section className="grid">
+        {/* ใช้โครงสร้าง tile-inner เพื่อให้ CSS จัดระเบียบไอคอนและข้อความสวยงาม */}
         <div className="tile" onClick={() => navigate("/checkin")}>
-          <b>Check-in สนาม</b>
+          <div className="tile-inner">
+            <CheckCircle size={60} strokeWidth={2.5} color="#5f5aa2" />
+            <b>Check-in สนาม</b>
+            <small>บันทึกการเข้าใช้งานสนาม</small>
+          </div>
         </div>
+
         <div className="tile" onClick={() => navigate("/equipment")}>
-          <b>ยืม-คืนอุปกรณ์</b>
+          <div className="tile-inner">
+            <Trophy size={60} strokeWidth={2.5} color="#5f5aa2" />
+            <b>ยืม-คืนอุปกรณ์</b>
+            <small>จัดการรายการอุปกรณ์กีฬา</small>
+          </div>
         </div>
       </section>
     </div>

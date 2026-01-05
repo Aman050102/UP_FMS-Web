@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import HeaderBase from "./HeaderBase";
-import SidebarUser from "./SidebarUser"; // ลบ /sidebar/ ออก
-import SidebarStaff from "./SidebarStaff"; // ลบ /sidebar/ ออกและใช้ชื่อไฟล์ให้ตรง
+import SidebarUser from "./SidebarUser";
+import SidebarStaff from "./SidebarStaff";
 
 export default function MainLayout({ role }: { role: "user" | "staff" }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,7 +13,7 @@ export default function MainLayout({ role }: { role: "user" | "staff" }) {
 
   return (
     <div className="app-layout">
-      {/* Header สไตล์ YouTube */}
+
       <HeaderBase
         onToggleMenu={toggleMenu}
         displayName={displayName}
@@ -28,7 +28,7 @@ export default function MainLayout({ role }: { role: "user" | "staff" }) {
       )}
 
       {/* ส่วนเนื้อหาหลัก */}
-      <main className="content-area" style={{ paddingTop: "70px", minHeight: "100vh", background: "#f0f0f0" }}>
+      <main className="content-area" style={{ paddingTop: "80px", minHeight: "100vh", background: "#f0f0f0" }}>
         <Outlet />
       </main>
     </div>

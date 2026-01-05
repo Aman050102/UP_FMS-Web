@@ -17,7 +17,7 @@ export default function SidebarUser({
 
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-header" style={{padding: '15px 20px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center'}}>
-            <img src="/img/dsa.png" alt="Logo" style={{height: '45px'}} />
+            <img src="/img/dsa.png" alt="Logo" style={{height: '60px'}} />
         </div>
 
         <a href="/user/menu" onClick={onClose}>

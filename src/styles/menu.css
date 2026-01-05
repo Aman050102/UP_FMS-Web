@@ -1,4 +1,4 @@
-/* src/styles/tiles.css */
+/* src/styles/menu.css */
 /* ====== เมนูด่วน (grid + tile) ====== */
 .grid {
   --tile-bg: var(--card, #fff);
@@ -104,5 +104,50 @@
   }
   .tile:hover svg {
     color: #c4b5fd;
+  }
+}
+/* จัดตำแหน่งเนื้อหาเมนูให้อยู่กลางจอ */
+.menu-container, [data-page="staff_menu"] main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.section-title {
+  margin-top: 20px;
+  margin-bottom: 40px;
+  font-size: 24px;
+  font-weight: 800;
+  color: #333;
+}
+
+/* ปรับปรุง Grid ให้รองรับ Responsive ได้นุ่มนวลขึ้น */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  padding: 10px;
+}
+
+.tile {
+  cursor: pointer;
+  background: #ffffff;
+  border-radius: 28px; /* เพิ่มความมนให้เหมือนในรูป */
+  padding: 40px 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.tile:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 45px rgba(95, 90, 162, 0.15);
+  background: #faf9ff;
+}
+
+@media (max-width: 600px) {
+  .grid {
+    grid-template-columns: 1fr; /* มือถือใช้ 1 คอลัมน์ */
   }
 }
