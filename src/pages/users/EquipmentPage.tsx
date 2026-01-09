@@ -4,7 +4,6 @@ import {
 } from "lucide-react";
 import "../../styles/equipment.css";
 
-// เชื่อมต่อ URL Cloudflare
 const API = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
 
 export default function EquipmentPage() {
@@ -20,11 +19,14 @@ export default function EquipmentPage() {
   const [borrowItems, setBorrowItems] = useState<{ name: string, qty: number }[]>([]);
 
   const refreshData = () => {
+    // 1. ดึงสต็อกปัจจุบัน
     fetch(`${API}/api/equipment/stock/`).then(res => res.json()).then(data => data.ok && setStocks(data.equipments));
 
+    // 2. ดึงรายการที่ยังไม่คืน (Pending Returns)
     if (activeTab === "return") {
       fetch(`${API}/api/equipment/pending-returns/`).then(res => res.json()).then(data => {
         if (data.ok) {
+          // จัดกลุ่มข้อมูลตามรหัสนิสิตเพื่อแสดงใน Accordion
           const grouped = data.rows.reduce((acc: any, curr: any) => {
             if (!acc[curr.student_id]) acc[curr.student_id] = { id: curr.student_id, faculty: curr.faculty, items: [] };
             acc[curr.student_id].items.push(curr);
@@ -34,8 +36,12 @@ export default function EquipmentPage() {
         }
       });
     }
+
+    // 3. ดึงประวัติการทำรายการวันนี้
     if (activeTab === "history") {
-      fetch(`${API}/api/staff/borrow-records/`).then(res => res.json()).then(data => data.ok && setBorrowHistory(data.days[0]?.rows || []));
+      fetch(`${API}/api/staff/borrow-records/`).then(res => res.json()).then(data => {
+        if (data.ok && data.days.length > 0) setBorrowHistory(data.days[0].rows);
+      });
     }
   };
 
@@ -44,6 +50,7 @@ export default function EquipmentPage() {
     refreshData();
   }, [activeTab]);
 
+  // ฟังก์ชันยืนยันการยืม (หักสต็อก + บันทึกประวัติ)
   const handleBorrowSubmit = async () => {
     if (!studentInfo.id || borrowItems.length === 0) return alert("กรุณาระบุรหัสนิสิตและอุปกรณ์");
     try {
@@ -51,7 +58,13 @@ export default function EquipmentPage() {
         await fetch(`${API}/api/equipment/borrow/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...studentInfo, equipment: item.name, qty: item.qty })
+          body: JSON.stringify({
+            student_id: studentInfo.id,
+            name: studentInfo.name,
+            faculty: studentInfo.faculty,
+            equipment: item.name,
+            qty: item.qty
+          })
         });
       }
       alert("ยืมอุปกรณ์สำเร็จ");
@@ -60,13 +73,17 @@ export default function EquipmentPage() {
     } catch (e) { alert("เกิดข้อผิดพลาดในการยืม"); }
   };
 
+  // ฟังก์ชันยืนยันการคืน (คืนสต็อก + บันทึกประวัติการคืน)
   const handleReturnItem = async (sid: string, faculty: string, itemName: string, qty: number) => {
     const res = await fetch(`${API}/api/equipment/return/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ student_id: sid, faculty, equipment: itemName, qty })
     });
-    if (res.ok) { alert("คืนอุปกรณ์สำเร็จ"); refreshData(); }
+    if (res.ok) {
+      alert("คืนอุปกรณ์สำเร็จ");
+      refreshData();
+    }
   };
 
   const getSportIcon = (name: string) => {
@@ -79,11 +96,15 @@ export default function EquipmentPage() {
 
   const handleUpdateBorrowQty = (itemName: string, delta: number) => {
     const exist = borrowItems.find(i => i.name === itemName);
+    const stockItem = stocks.find(s => s.name === itemName);
+
     if (exist) {
       const newQty = exist.qty + delta;
+      if (newQty > (stockItem?.stock || 0) && delta > 0) return alert("สินค้าในสต็อกไม่พอ");
       if (newQty <= 0) setBorrowItems(borrowItems.filter(i => i.name !== itemName));
       else setBorrowItems(borrowItems.map(i => i.name === itemName ? { ...i, qty: newQty } : i));
     } else if (delta > 0) {
+      if ((stockItem?.stock || 0) <= 0) return alert("สินค้าหมด");
       setBorrowItems([...borrowItems, { name: itemName, qty: 1 }]);
     }
   };
@@ -162,6 +183,7 @@ export default function EquipmentPage() {
         {activeTab === "return" && (
           <div className="return-layout">
             <div className="accordion-list">
+              {pendingReturns.length === 0 && <div className="empty-state">ไม่มีรายการค้างคืน</div>}
               {pendingReturns.map(user => (
                 <div key={user.id} className={`acc-item ${expandedId === user.id ? 'open' : ''}`}>
                   <div className="acc-header" onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}>
@@ -170,13 +192,13 @@ export default function EquipmentPage() {
                   </div>
                   <div className="acc-body">
                     <table className="return-table-detail">
-                      <thead><tr><th>รายการ</th><th>ค้าง</th><th>จัดการ</th></tr></thead>
+                      <thead><tr><th>รายการ</th><th>ค้างคืน</th><th>จัดการ</th></tr></thead>
                       <tbody>
                         {user.items.map((item: any, i: number) => (
                           <tr key={i}>
-                            <td><div className="item-with-icon-only">{getSportIcon(item.equipment)}<span>{item.equipment}</span></div></td>
-                            <td className="txt-pending">{item.remaining}</td>
-                            <td><button className="btn-return-line" onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}>ยืนยันคืน</button></td>
+                            <td data-label="รายการ"><div className="item-with-icon-only">{getSportIcon(item.equipment)}<span>{item.equipment}</span></div></td>
+                            <td data-label="ค้างคืน" className="txt-pending">{item.remaining}</td>
+                            <td data-label="จัดการ"><button className="btn-return-line" onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}>ยืนยันคืน</button></td>
                           </tr>
                         ))}
                       </tbody>
@@ -191,19 +213,21 @@ export default function EquipmentPage() {
         {activeTab === "history" && (
           <div className="history-layout">
             <div className="panel history-table-panel">
-              <h4 className="title-sm"><History size={18} /> รายการประวัติวันนี้</h4>
+              <h4 className="title-sm"><History size={18} /> ประวัติการทำรายการวันนี้</h4>
               <table className="history-table">
                 <thead><tr><th>เวลา</th><th>ผู้ยืม</th><th>รายการ</th><th>จำนวน</th><th>สถานะ</th></tr></thead>
                 <tbody>
                   {borrowHistory.map((h: any, i: number) => (
                     <tr key={i}>
-                      <td>{h.time}</td>
-                      <td><strong>{h.student_id}</strong><br /><small>{h.faculty}</small></td>
-                      <td>{h.equipment}</td>
-                      <td>{h.qty} ชิ้น</td>
-                      <td><span className={h.action === "return" ? "status-complete" : "status-pending"}>
-                        {h.action === "return" ? <><CheckCircle2 size={16} /> คืนแล้ว</> : "กำลังยืม"}
-                      </span></td>
+                      <td data-label="เวลา">{h.time}</td>
+                      <td data-label="ผู้ยืม"><strong>{h.student_id}</strong><br /><small>{h.faculty}</small></td>
+                      <td data-label="รายการ">{h.equipment}</td>
+                      <td data-label="จำนวน">{h.qty} ชิ้น</td>
+                      <td data-label="สถานะ">
+                        <span className={h.action === "return" ? "status-complete" : "status-pending"}>
+                          {h.action === "return" ? <><CheckCircle2 size={16} /> คืนแล้ว</> : "🟠 กำลังยืม"}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

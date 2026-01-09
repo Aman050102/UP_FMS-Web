@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
+import MainLayoutStaff from "./components/MainLayoutStaff"; // Layout เฉพาะของ Staff
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,7 +22,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* กลุ่ม User */}
+      {/* กลุ่ม User: ใช้ Layout พื้นฐาน */}
       <Route element={<MainLayout role="user" />}>
         <Route path="/user/menu" element={<UserMenu />} />
         <Route path="/checkin" element={<CheckinPage />} />
@@ -29,11 +30,13 @@ export default function App() {
         <Route path="/equipment" element={<EquipmentPage />} />
       </Route>
 
-      {/* กลุ่ม Staff */}
-      <Route element={<MainLayout role="staff" />}>
+      {/* กลุ่ม Staff: ใช้ Layout เฉพาะที่มี Sidebar และ Notification */}
+      <Route element={<MainLayoutStaff />}>
         <Route path="/staff/menu" element={<StaffMenu />} />
-        <Route path="/staff_equipment" element={<StaffEquipmentManagePage />} />
+        {/* ปรับ Path ให้ตรงกับ Sidebar ที่คุณตั้งไว้ */}
+        <Route path="/staff/equipment" element={<StaffEquipmentManagePage />} />
         <Route path="/staff/borrow-ledger" element={<StaffBorrowLedgerPage />} />
+        {/* เพิ่มหน้าอื่นๆ ของ Staff ที่นี่เพื่อให้เมนูเหมือนกันทุกหน้า */}
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
