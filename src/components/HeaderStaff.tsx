@@ -1,42 +1,58 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import "../styles/header.css";
+import React, { useState } from "react";
+import { Outlet } from "react-router-dom";
+import HeaderStaff from "./HeaderStaff";
+import SidebarStaff from "./SidebarStaff";
 
-export default function HeaderStaff({ displayName, BACKEND }: any) {
-  const navigate = useNavigate();
+export default function MainLayoutStaff() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // ดึงชื่อจาก LocalStorage และกำหนด URL Backend ของ Cloudflare
+  const displayName = localStorage.getItem("display_name") || "เจ้าหน้าที่";
+  const BACKEND = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <header className="topbar">
-      <div className="header-left">
-        <button className="menu-toggle-btn" title="เมนูแอดมิน">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-          </svg>
-        </button>
-        <img
-          src="/img/dsa.png"
-          alt="Staff Logo"
-          className="brand-logo"
-          onClick={() => navigate("/staff/menu")}
+    <div className="app-layout" style={{ position: 'relative' }}>
+      {/* 1. Sidebar วางไว้ด้านบนสุดของโครงสร้างเพื่อให้ Layer (z-index) อยู่บนสุด */}
+      <SidebarStaff
+        open={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
+
+      {/* 2. Header รับฟังก์ชันเปิดเมนู */}
+      <HeaderStaff
+        onToggleMenu={toggleMenu}
+        displayName={displayName}
+        BACKEND={BACKEND}
+      />
+
+      {/* 3. ส่วนเนื้อหาหลัก */}
+      <main
+        className="content-area"
+        style={{
+          paddingTop: "80px",
+          minHeight: "100vh",
+          background: "#f8fafc",
+          transition: "margin 0.3s ease"
+        }}
+      >
+        <Outlet />
+      </main>
+
+      {/* 4. Overlay ม่านดำสำหรับปิดเมนู เมื่อเปิด Sidebar */}
+      {isMenuOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setIsMenuOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 998 // ต้องน้อยกว่า z-index ของ Sidebar ในไฟล์ CSS
+          }}
         />
-      </div>
-
-      <nav className="header-center mainmenu">
-        <ul>
-          <li><a href="/staff/menu" className="toplink">หน้าแรก</a></li>
-          <li><a href="/staff_equipment" className="toplink">จัดการอุปกรณ์</a></li>
-          <li><a href="/staff/borrow-ledger" className="toplink">บันทึกยืม-คืน</a></li>
-        </ul>
-      </nav>
-
-      <div className="header-right">
-        <div className="user-info">
-          <span className="user-name-text" style={{color: '#5f5aa2'}}>Admin: {displayName}</span>
-        </div>
-        <form action={`${BACKEND}/logout/`} method="post">
-          <button type="submit" className="logout-btn" style={{background: '#333'}}>Logout</button>
-        </form>
-      </div>
-    </header>
+      )}
+    </div>
   );
 }

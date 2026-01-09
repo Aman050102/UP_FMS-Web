@@ -1,18 +1,8 @@
 import { useState, useEffect } from "react";
 import "../styles/login.css";
 
-const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-
-function getCookie(name: string) {
-  const m = document.cookie.match(new RegExp("(^|; )" + name + "=([^;]+)"));
-  return m ? decodeURIComponent(m[2]) : "";
-}
-
-const primeCsrf = async () => {
-  try {
-    await fetch(`${API}/auth/csrf/`, { credentials: "include" });
-  } catch {}
-};
+// ปรับให้รองรับพอร์ต 8787 ของ Hono
+const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8787").replace(/\/$/, "");
 
 type Role = "person" | "staff";
 
@@ -20,13 +10,9 @@ export default function Login() {
   const [role, setRole] = useState<Role>("person");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [showPw, setShowPw] = useState(false); // 👁 state
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    primeCsrf();
-  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -45,34 +31,37 @@ export default function Login() {
 
     try {
       setLoading(true);
-      await primeCsrf();
-      const csrftoken = getCookie("csrftoken");
 
+      // เปลี่ยนการยิง API ไปที่ Hono (ตัดระบบ CSRF ของ Django ออก)
       const res = await fetch(`${API}/auth/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": csrftoken,
         },
         credentials: "include",
         body: JSON.stringify({
           username,
           password,
           role,
-          remember: true,
         }),
       });
 
-      if (!res.ok) throw new Error("ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
-
       const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+
+      // เก็บชื่อเพื่อแสดงผลในหน้าอื่นๆ
+      localStorage.setItem("display_name", data.username || username);
+      localStorage.setItem("user_role", data.account_role);
+
       window.location.href = data?.next
         ? data.next
         : role === "staff"
         ? "/staff/menu"
         : "/user/menu";
     } catch (err: any) {
-      setError(err?.message || "เกิดข้อผิดพลาด");
+      // ข้อความ Error ที่คุณเจอมาจากบรรทัดนี้ครับ ผมปรับให้กว้างขึ้น
+      setError(err?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
       setLoading(false);
     }
@@ -101,7 +90,6 @@ export default function Login() {
             />
           </label>
 
-          {/* รหัสผ่าน + ไอคอนตา */}
           <label className="field">
             <span className="field-label">Password</span>
             <div className="field-input-with-toggle">
@@ -119,20 +107,12 @@ export default function Login() {
                 onClick={() => setShowPw((v) => !v)}
               >
                 {showPw ? (
-                  // 👁 ตาเปิด
                   <svg viewBox="0 0 24 24" width="22" height="22">
-                    <path
-                      fill="currentColor"
-                      d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
-                    />
+                    <path fill="currentColor" d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/>
                   </svg>
                 ) : (
-                  // 👁 ตาปิด
                   <svg viewBox="0 0 24 24" width="22" height="22">
-                    <path
-                      fill="currentColor"
-                      d="M1 1 23 23M9.9 4.24A10.75 10.75 0 0 1 12 4c7 0 11 7 11 7a21.8 21.8 0 0 1-2.2 3.39M6.47 6.47A10.75 10.75 0 0 0 1 11s4 7 11 7a11 11 0 0 0 5.47-1.47"
-                    />
+                    <path fill="currentColor" d="M1 1 23 23M9.9 4.24A10.75 10.75 0 0 1 12 4c7 0 11 7 11 7a21.8 21.8 0 0 1-2.2 3.39M6.47 6.47A10.75 10.75 0 0 0 1 11s4 7 11 7a11 11 0 0 0 5.47-1.47"/>
                   </svg>
                 )}
               </button>

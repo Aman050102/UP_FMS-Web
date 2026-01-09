@@ -1,213 +1,126 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Minus, Save, Trash2 } from "lucide-react";
+import { Package, Plus, Minus, Trash2, Edit3, Save, X } from "lucide-react";
 import HeaderStaff from "../../components/HeaderStaff";
-import "../../styles/staff-equipment.css";
+import "../../styles/equipment.css"; // ใช้ CSS ตัวเดียวกับหน้ายืมคืนเพื่อให้สไตล์เหมือนกัน
 
-// ---------------- Backend Configuration ----------------
-const BACKEND = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") || "http://localhost:8000";
-const API_LIST = `${BACKEND}/api/staff/equipments/`;
-const API_ITEM = (id: number) => `${BACKEND}/api/staff/equipment/${id}/`;
-
-interface EquipmentItem {
-  id: number;
-  name: string;
-  stock: number;
-  total: number;
-}
+const API = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
 
 export default function StaffEquipmentManagePage() {
   const [displayName] = useState(localStorage.getItem("display_name") || "เจ้าหน้าที่");
-  const [items, setItems] = useState<EquipmentItem[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [equipName, setEquipName] = useState("");
   const [equipStock, setEquipStock] = useState("10");
-  const [editingNameId, setEditingNameId] = useState<number | null>(null);
-  const [editingNameValue, setEditingNameValue] = useState("");
-  const [showSheet, setShowSheet] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // ---------------- Lifecycle ----------------
-  useEffect(() => {
-    document.body.setAttribute("data-page", "staff-equipment");
-    fetchList();
-    return () => document.body.removeAttribute("data-page");
-  }, []);
-
-  // ---------------- API Actions ----------------
   const fetchList = async () => {
     try {
-      const res = await fetch(API_LIST, { credentials: "include" });
+      const res = await fetch(`${API}/api/equipment/stock/`);
       const data = await res.json();
-      if (data.ok) setItems(data.rows || []);
-    } catch { console.error("โหลดข้อมูลล้มเหลว"); }
+      if (data.ok) setItems(data.equipments);
+    } catch (e) { console.error("Load failed"); }
   };
 
-  const getCsrfToken = () => document.cookie.match(/(?:^|;)\s*csrftoken=([^;]+)/)?.[1] || "";
+  useEffect(() => { fetchList(); }, []);
 
-  const openToast = () => {
-    setShowSheet(true);
-    setTimeout(() => setShowSheet(false), 1500);
-  };
-
-  const handleAdd = async () => {
-    const name = equipName.trim();
-    const stock = parseInt(equipStock);
-    if (!name) return alert("กรุณากรอกชื่ออุปกรณ์");
-
-    const existed = items.find(i => i.name.toLowerCase() === name.toLowerCase());
+  const handleSave = async () => {
+    if (!equipName) return alert("กรุณาระบุชื่ออุปกรณ์");
+    setLoading(true);
     try {
-      const url = existed ? API_ITEM(existed.id) : API_ITEM(0);
-      const method = existed ? "PATCH" : "POST";
-      const body = existed
-        ? { stock: existed.stock + stock, total: existed.total + stock }
-        : { name, stock, total: stock };
+      const method = editingId ? "PATCH" : "POST";
+      const url = editingId ? `${API}/api/staff/equipment/${editingId}/` : `${API}/api/staff/equipment/0/`;
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
-        credentials: "include",
-        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: equipName,
+          stock: parseInt(equipStock),
+          total: parseInt(equipStock)
+        })
       });
 
       if (res.ok) {
-        setEquipName(""); setEquipStock("10"); openToast(); fetchList();
+        setEquipName(""); setEquipStock("10"); setEditingId(null);
+        fetchList();
       }
-    } catch { alert("เกิดข้อผิดพลาดในการบันทึก"); }
+    } finally { setLoading(false); }
   };
 
-  const updateRow = async (row: EquipmentItem) => {
-    try {
-      await fetch(API_ITEM(row.id), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
-        credentials: "include",
-        body: JSON.stringify({
-          name: row.name,
-          stock: row.stock,
-          total: Math.max(row.total, row.stock)
-        }),
-      });
-      openToast();
-      fetchList();
-    } catch { alert("บันทึกไม่สำเร็จ"); }
-  };
-
-  const deleteRow = async (id: number) => {
-    if (!confirm("ต้องการลบอุปกรณ์นี้ออกจากระบบหรือไม่?")) return;
-    await fetch(API_ITEM(id), {
-        method: "DELETE",
-        headers: { "X-CSRFToken": getCsrfToken() },
-        credentials: "include"
-    });
+  const deleteItem = async (id: number) => {
+    if (!confirm("ยืนยันการลบอุปกรณ์นี้?")) return;
+    await fetch(`${API}/api/staff/equipment/${id}/`, { method: "DELETE" });
     fetchList();
   };
 
   return (
-    <div className="staff-equipment-page">
-      {/* 1. เชื่อมต่อ HeaderStaff ให้เหมือนหน้าเมนู */}
-      <HeaderStaff displayName={displayName} BACKEND={BACKEND} />
+    <div className="equipment-container">
+      <HeaderStaff displayName={displayName} BACKEND={API} />
 
-      <main className="wrap">
-        {/* 2. Navigation Tabs (YouTube Style) */}
-        <nav className="mainmenu">
-          <ul>
-            <li>
-              <Link className="tab active" to="/staff/equipment">
-                จัดการอุปกรณ์กีฬา
-              </Link>
-            </li>
-            <li>
-              <Link className="tab" to="/staff/borrow-ledger">
-                บันทึกการยืม-คืน
-              </Link>
-            </li>
-          </ul>
-        </nav>
+      <nav className="tab-header" style={{ marginTop: '20px' }}>
+        <Link to="/staff/equipment" className="active" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <button className="active">จัดการอุปกรณ์</button>
+        </Link>
+        <Link to="/staff/borrow-ledger" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <button>บันทึกการยืม-คืน</button>
+        </Link>
+      </nav>
 
-        <header className="menu-welcome">
-          <h1>จัดการคลังอุปกรณ์กีฬา</h1>
-          <p>เพิ่ม แก้ไข หรืออัปเดตจำนวนสต็อกอุปกรณ์ในระบบ</p>
-        </header>
-
-        {/* 3. ส่วนเพิ่มอุปกรณ์ */}
-        <section className="panel add-panel">
-          <h4 className="title-sm"><Plus size={20} /> เพิ่มอุปกรณ์ใหม่</h4>
-          <div className="add-row">
-            <input
-              className="input name-input"
-              placeholder="ชื่ออุปกรณ์ (เช่น ลูกบาสเกตบอล)"
-              value={equipName}
-              onChange={e => setEquipName(e.target.value)}
-            />
-            <input
-              className="input stock-input"
-              type="number"
-              value={equipStock}
-              onChange={e => setEquipStock(e.target.value)}
-            />
-            <button className="btn primary" onClick={handleAdd}>เพิ่มเข้าคลัง</button>
+      <div className="borrow-vertical-flow">
+        {/* ส่วนเพิ่ม/แก้ไขอุปกรณ์ */}
+        <section className="panel info-section">
+          <h4 className="title-sm">
+            {editingId ? <Edit3 size={18} /> : <Plus size={18} />}
+            {editingId ? "แก้ไขข้อมูลอุปกรณ์" : "เพิ่มอุปกรณ์ใหม่เข้าระบบ"}
+          </h4>
+          <div className="borrow-form-inputs">
+            <div className="input-row">
+              <div className="field-group">
+                <label>ชื่ออุปกรณ์</label>
+                <input value={equipName} onChange={e => setEquipName(e.target.value)} placeholder="เช่น ลูกบาสเกตบอล" />
+              </div>
+              <div className="field-group">
+                <label>จำนวนสต็อกทั้งหมด</label>
+                <input type="number" value={equipStock} onChange={e => setEquipStock(e.target.value)} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="submit-btn-large" onClick={handleSave} disabled={loading} style={{ flex: 2 }}>
+                    {editingId ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลังอุปกรณ์"}
+                </button>
+                {editingId && (
+                    <button className="submit-btn-large" onClick={() => {setEditingId(null); setEquipName("");}} style={{ flex: 1, background: '#666' }}>
+                        ยกเลิก
+                    </button>
+                )}
+            </div>
           </div>
         </section>
 
-        {/* 4. รายการอุปกรณ์ทั้งหมด */}
-        <section className="panel equip-panel">
-          <h4 className="title-sm"><Package size={20} /> รายการในคลังปัจจุบัน</h4>
-          <div className="table-head">
-            <span>ชื่ออุปกรณ์ (ดับเบิลคลิกเพื่อแก้ชื่อ)</span>
-            <span>สต็อกคงเหลือ / ทั้งหมด</span>
-            <span style={{textAlign:'right'}}>เครื่องมือ</span>
-          </div>
-          <div className="list">
-            {items.length === 0 && <div className="empty">ไม่มีรายการอุปกรณ์ในระบบ</div>}
-            {items.map(row => (
-              <div key={row.id} className="row">
-                <div className="name-wrap">
-                  {editingNameId === row.id ? (
-                    <input
-                      className="name-edit"
-                      value={editingNameValue}
-                      autoFocus
-                      onChange={e => setEditingNameValue(e.target.value)}
-                      onBlur={() => {
-                        setEditingNameId(null);
-                        updateRow({...row, name: editingNameValue});
-                      }}
-                    />
-                  ) : (
-                    <span
-                      className="name"
-                      onDoubleClick={() => {
-                        setEditingNameId(row.id);
-                        setEditingNameValue(row.name);
-                      }}
-                    >
-                      {row.name}
-                    </span>
-                  )}
+        {/* ตารางแสดงรายการ */}
+        <section className="panel stock-section">
+          <h4 className="title-sm"><Package size={18} /> รายการอุปกรณ์ในคลังปัจจุบัน</h4>
+          <div className="stock-grid-minimal">
+            {items.map(item => (
+              <div key={item.id} className="stock-card-mini" style={{ height: 'auto', padding: '15px' }}>
+                <div className="info-with-icon">
+                  <div className="txt">
+                    <strong style={{ fontSize: '16px' }}>{item.name}</strong>
+                    <small>คงเหลือ: {item.stock} / ทั้งหมด: {item.total}</small>
+                  </div>
                 </div>
-                <div className="inline-edit">
-                  <button className="icon-btn steper" onClick={() => updateRow({...row, stock: row.stock - 1})}><Minus size={14}/></button>
-                  <span className="stock-display">{row.stock} / {row.total}</span>
-                  <button className="icon-btn steper" onClick={() => updateRow({...row, stock: row.stock + 1})}><Plus size={14}/></button>
-                </div>
-                <div className="actions">
-                  <button className="icon-btn save" onClick={() => updateRow(row)} title="บันทึก"><Save size={16}/></button>
-                  <button className="icon-btn danger" onClick={() => deleteRow(row.id)} title="ลบ"><Trash2 size={16}/></button>
+                <div className="actions" style={{ display: 'flex', gap: '8px' }}>
+                  <button className="q-btn" onClick={() => {
+                    setEditingId(item.id); setEquipName(item.name); setEquipStock(item.total.toString());
+                  }} title="แก้ไข"><Edit3 size={14}/></button>
+                  <button className="q-btn" onClick={() => deleteItem(item.id)} style={{ color: 'red' }} title="ลบ"><Trash2 size={14}/></button>
                 </div>
               </div>
             ))}
           </div>
         </section>
-      </main>
-
-      {/* Toast Notification */}
-      {showSheet && (
-        <div className="sheet show">
-          <div className="sheet-card">
-            <div className="sheet-title">ดำเนินการสำเร็จ</div>
-            <div className="sheet-icon">✔</div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
 import {
-  Package, Search, Plus, Minus, Trash2, User,
-  ChevronDown, ChevronUp, History, CheckCircle2, Dribbble, Trophy, Activity
+  Package, User, Minus, Plus, Trash2, ChevronDown, ChevronUp, History, CheckCircle2, Dribbble, Trophy, Activity
 } from "lucide-react";
 import "../../styles/equipment.css";
+
+// เชื่อมต่อ URL Cloudflare
+const API = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
 
 export default function EquipmentPage() {
   const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">("borrow");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  // --- States ---
   const [faculties, setFaculties] = useState<string[]>([]);
   const [stocks, setStocks] = useState<{name: string, stock: number}[]>([]);
   const [pendingReturns, setPendingReturns] = useState<any[]>([]);
@@ -18,16 +19,11 @@ export default function EquipmentPage() {
   const [studentInfo, setStudentInfo] = useState({ id: "", name: "", faculty: "", phone: "" });
   const [borrowItems, setBorrowItems] = useState<{ name: string, qty: number }[]>([]);
 
-  // --- Data Loading ---
-  useEffect(() => {
-    fetch("/api/faculties/").then(res => res.json()).then(data => data.ok && setFaculties(data.faculties));
-    refreshData();
-  }, [activeTab]);
-
   const refreshData = () => {
-    fetch("/api/equipment/stock/").then(res => res.json()).then(data => data.ok && setStocks(data.equipments));
+    fetch(`${API}/api/equipment/stock/`).then(res => res.json()).then(data => data.ok && setStocks(data.equipments));
+
     if (activeTab === "return") {
-      fetch("/api/equipment/pending-returns/").then(res => res.json()).then(data => {
+      fetch(`${API}/api/equipment/pending-returns/`).then(res => res.json()).then(data => {
         if (data.ok) {
           const grouped = data.rows.reduce((acc: any, curr: any) => {
             if (!acc[curr.student_id]) acc[curr.student_id] = { id: curr.student_id, faculty: curr.faculty, items: [] };
@@ -39,33 +35,38 @@ export default function EquipmentPage() {
       });
     }
     if (activeTab === "history") {
-      fetch("/api/staff/borrow-records/").then(res => res.json()).then(data => data.ok && setBorrowHistory(data.days[0].rows));
+      fetch(`${API}/api/staff/borrow-records/`).then(res => res.json()).then(data => data.ok && setBorrowHistory(data.days[0]?.rows || []));
     }
   };
 
-  // --- Actions ---
+  useEffect(() => {
+    fetch(`${API}/api/faculties/`).then(res => res.json()).then(data => data.ok && setFaculties(data.faculties));
+    refreshData();
+  }, [activeTab]);
+
   const handleBorrowSubmit = async () => {
     if (!studentInfo.id || borrowItems.length === 0) return alert("กรุณาระบุรหัสนิสิตและอุปกรณ์");
-    for (const item of borrowItems) {
-      await fetch("/api/equipment/borrow/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...studentInfo, equipment: item.name, qty: item.qty })
-      });
-    }
-    alert("ยืมอุปกรณ์สำเร็จ");
-    setBorrowItems([]);
-    refreshData();
+    try {
+      for (const item of borrowItems) {
+        await fetch(`${API}/api/equipment/borrow/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...studentInfo, equipment: item.name, qty: item.qty })
+        });
+      }
+      alert("ยืมอุปกรณ์สำเร็จ");
+      setBorrowItems([]);
+      refreshData();
+    } catch (e) { alert("เกิดข้อผิดพลาดในการยืม"); }
   };
 
   const handleReturnItem = async (sid: string, faculty: string, itemName: string, qty: number) => {
-    await fetch("/api/equipment/return/", {
+    const res = await fetch(`${API}/api/equipment/return/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ student_id: sid, faculty, equipment: itemName, qty })
     });
-    alert("คืนอุปกรณ์สำเร็จ");
-    refreshData();
+    if (res.ok) { alert("คืนอุปกรณ์สำเร็จ"); refreshData(); }
   };
 
   const getSportIcon = (name: string) => {

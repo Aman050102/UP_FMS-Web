@@ -1,125 +1,93 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import HeaderStaff from "../../components/HeaderStaff";
-import "../../styles/staff_ledger.css";
+import "../../styles/equipment.css"; // ใช้ CSS ตัวเดียวกัน
 
-const BACKEND: string = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") || "http://localhost:8000";
-const API_RECORDS = `${BACKEND}/api/staff/borrow-records/`;
-
-interface LedgerRow {
-  id: number;
-  time: string;
-  student_id: string;
-  faculty: string;
-  equipment: string;
-  action: "borrow" | "return";
-  qty: number;
-}
-
-interface LedgerDay {
-  date: string;
-  rows: LedgerRow[];
-}
+const API = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
 
 export default function StaffBorrowLedgerPage() {
   const [displayName] = useState(localStorage.getItem("display_name") || "เจ้าหน้าที่");
   const [studentId, setStudentId] = useState("");
   const [datePick, setDatePick] = useState(new Date().toISOString().slice(0, 10));
-  const [days, setDays] = useState<LedgerDay[]>([]);
+  const [days, setDays] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    document.body.setAttribute("data-page", "staff-borrow-ledger");
-    fetchRecords();
-    return () => document.body.removeAttribute("data-page");
-  }, [datePick]);
-
-  async function fetchRecords() {
+  const fetchRecords = async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ date: datePick });
       if (studentId.trim()) params.append("student_id", studentId.trim());
-
-      const res = await fetch(`${API_RECORDS}?${params.toString()}`, { credentials: "include" });
+      const res = await fetch(`${API}/api/staff/borrow-records/?${params.toString()}`);
       const data = await res.json();
       if (data.ok) setDays(data.days || []);
-    } finally {
-      setLoading(false);
-    }
-  }
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { fetchRecords(); }, [datePick]);
 
   return (
-    <div className="staff-ledger-page">
-      <HeaderStaff displayName={displayName} BACKEND={BACKEND} />
-      <main className="wrap">
-        <nav className="mainmenu">
-          <ul>
-            <li><Link className="tab" to="/staff/equipment">จัดการอุปกรณ์กีฬา</Link></li>
-            <li><Link className="tab active" to="/staff/borrow-ledger">✓ บันทึกการยืม-คืน</Link></li>
-          </ul>
-        </nav>
+    <div className="equipment-container">
+      <HeaderStaff displayName={displayName} BACKEND={API} />
 
-        <h1 className="page-title">ประวัติการยืม–คืนอุปกรณ์</h1>
+      <nav className="tab-header" style={{ marginTop: '20px' }}>
+        <Link to="/staff/equipment" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <button>จัดการอุปกรณ์</button>
+        </Link>
+        <Link to="/staff/borrow-ledger" className="active" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <button className="active">บันทึกการยืม-คืน</button>
+        </Link>
+      </nav>
 
-        <div className="filter-row">
-          <label className="fld">
-            <span>รหัสนิสิต</span>
-            <input value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="ค้นหารหัสนิสิต..." />
-          </label>
-          <label className="fld">
-            <span>เลือกวันที่</span>
-            <input type="date" value={datePick} onChange={e => setDatePick(e.target.value)} />
-          </label>
-          <button className="btn primary" onClick={fetchRecords}>ค้นหาข้อมูล</button>
-        </div>
+      <div className="borrow-vertical-flow">
+        <section className="panel info-section">
+          <h4 className="title-sm">ตัวกรองข้อมูล</h4>
+          <div className="input-row" style={{ alignItems: 'flex-end' }}>
+            <div className="field-group">
+                <label>ค้นหารหัสนิสิต</label>
+                <input value={studentId} onChange={e => setStudentId(e.target.value)} placeholder="ระบุรหัส 8 หลัก..." />
+            </div>
+            <div className="field-group">
+                <label>ระบุวันที่</label>
+                <input type="date" value={datePick} onChange={e => setDatePick(e.target.value)} />
+            </div>
+            <button className="btn-return-line" onClick={fetchRecords} style={{ height: '42px', padding: '0 30px' }}>ค้นหา</button>
+          </div>
+        </section>
 
-        <section className="panel">
-          {loading ? (
-            <div className="empty">กำลังโหลดข้อมูล...</div>
-          ) : days.length === 0 ? (
-            <div className="empty">ไม่พบประวัติการทำรายการในวันที่เลือก</div>
-          ) : (
-            days.map((day, idx) => (
-              <article key={idx} className="day-card">
-                <header className="day-title">
-                  <div className="date">รายการวันที่ {day.date}</div>
-                  <div className="count">ทั้งหมด {day.rows.length} รายการ</div>
-                </header>
-                <div className="table-wrap">
-                  <table className="ledger-table">
+        <div className="history-layout">
+           {days.map((day: any) => (
+             <section className="panel history-table-panel" key={day.date}>
+                <h4 className="title-sm">รายการวันที่ {day.date} ({day.rows.length} รายการ)</h4>
+                <table className="history-table">
                     <thead>
-                      <tr>
-                        <th>เวลา</th>
-                        <th>รหัสนิสิต</th>
-                        <th>คณะ/หน่วยงาน</th>
-                        <th>อุปกรณ์</th>
-                        <th>ประเภท</th>
-                        <th>จำนวน</th>
-                      </tr>
+                        <tr>
+                            <th>เวลา</th>
+                            <th>รหัสนิสิต</th>
+                            <th>อุปกรณ์</th>
+                            <th>ประเภท</th>
+                            <th>จำนวน</th>
+                        </tr>
                     </thead>
                     <tbody>
-                      {day.rows.map(row => (
-                        <tr key={row.id}>
-                          <td><span className="time-badge">{row.time}</span></td>
-                          <td><strong>{row.student_id}</strong></td>
-                          <td className="fac">{row.faculty}</td>
-                          <td>{row.equipment}</td>
-                          <td>
-                            <span className={row.action === "return" ? "status-return" : "status-borrow"}>
-                              {row.action === "return" ? "🟢 คืน" : "🟠 ยืม"}
-                            </span>
-                          </td>
-                          <td>{row.qty}</td>
-                        </tr>
-                      ))}
+                        {day.rows.map((row: any) => (
+                            <tr key={row.id}>
+                                <td>{row.time}</td>
+                                <td><b>{row.student_id}</b></td>
+                                <td>{row.equipment}</td>
+                                <td>
+                                    <span className={row.action === "return" ? "status-complete" : "txt-pending"}>
+                                        {row.action === "return" ? "🟢 คืนแล้ว" : "🟠 กำลังยืม"}
+                                    </span>
+                                </td>
+                                <td>{row.qty}</td>
+                            </tr>
+                        ))}
                     </tbody>
-                  </table>
-                </div>
-              </article>
-            ))
-          )}
-        </section>
-      </main>
+                </table>
+             </section>
+           ))}
+        </div>
+      </div>
     </div>
   );
 }
