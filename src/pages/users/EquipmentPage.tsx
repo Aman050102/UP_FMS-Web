@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  Package, Search, Plus, Minus, Trash2, Smartphone, Building2, User,
+  Package, Search, Plus, Minus, Trash2, User,
   ChevronDown, ChevronUp, History, CheckCircle2, Dribbble, Trophy, Activity
 } from "lucide-react";
 import "../../styles/equipment.css";
@@ -10,34 +10,64 @@ export default function EquipmentPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   // --- States ---
+  const [faculties, setFaculties] = useState<string[]>([]);
+  const [stocks, setStocks] = useState<{name: string, stock: number}[]>([]);
+  const [pendingReturns, setPendingReturns] = useState<any[]>([]);
+  const [borrowHistory, setBorrowHistory] = useState<any[]>([]);
+
   const [studentInfo, setStudentInfo] = useState({ id: "", name: "", faculty: "", phone: "" });
   const [borrowItems, setBorrowItems] = useState<{ name: string, qty: number }[]>([]);
-  const [returnQtys, setReturnQtys] = useState<{ [key: string]: number }>({});
 
-  // --- Mock Data (ข้อมูลจำลองป้องกันหน้าขาว) ---
-  const stocks = [
-    { name: "ลูกบาสเกตบอล", stock: 10 },
-    { name: "ไม้แบดมินตัน", stock: 15 },
-    { name: "ลูกฟุตบอล", stock: 5 }
-  ];
+  // --- Data Loading ---
+  useEffect(() => {
+    fetch("/api/faculties/").then(res => res.json()).then(data => data.ok && setFaculties(data.faculties));
+    refreshData();
+  }, [activeTab]);
 
-  const pendingReturns = [
-    {
-      id: "65000001",
-      name: "อามาน อาลีแก",
-      items: [
-        { name: "ลูกบาสเกตบอล", qty: 2, totalBorrowed: 2, status: "pending" },
-        { name: "ไม้แบดมินตัน", qty: 1, totalBorrowed: 1, status: "pending" }
-      ]
+  const refreshData = () => {
+    fetch("/api/equipment/stock/").then(res => res.json()).then(data => data.ok && setStocks(data.equipments));
+    if (activeTab === "return") {
+      fetch("/api/equipment/pending-returns/").then(res => res.json()).then(data => {
+        if (data.ok) {
+          const grouped = data.rows.reduce((acc: any, curr: any) => {
+            if (!acc[curr.student_id]) acc[curr.student_id] = { id: curr.student_id, faculty: curr.faculty, items: [] };
+            acc[curr.student_id].items.push(curr);
+            return acc;
+          }, {});
+          setPendingReturns(Object.values(grouped));
+        }
+      });
     }
-  ];
+    if (activeTab === "history") {
+      fetch("/api/staff/borrow-records/").then(res => res.json()).then(data => data.ok && setBorrowHistory(data.days[0].rows));
+    }
+  };
 
-  const borrowHistory = [
-    { id: "65000001", name: "อามาน อาลีแก", item: "นกหวีด", qty: 1, date: "02/01/2024", status: "returned" },
-    { id: "65000002", name: "สมชาย ทดสอบ", item: "ลูกฟุตบอล", qty: 2, date: "01/01/2024", status: "returned" }
-  ];
+  // --- Actions ---
+  const handleBorrowSubmit = async () => {
+    if (!studentInfo.id || borrowItems.length === 0) return alert("กรุณาระบุรหัสนิสิตและอุปกรณ์");
+    for (const item of borrowItems) {
+      await fetch("/api/equipment/borrow/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...studentInfo, equipment: item.name, qty: item.qty })
+      });
+    }
+    alert("ยืมอุปกรณ์สำเร็จ");
+    setBorrowItems([]);
+    refreshData();
+  };
 
-  // --- Helpers ---
+  const handleReturnItem = async (sid: string, faculty: string, itemName: string, qty: number) => {
+    await fetch("/api/equipment/return/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ student_id: sid, faculty, equipment: itemName, qty })
+    });
+    alert("คืนอุปกรณ์สำเร็จ");
+    refreshData();
+  };
+
   const getSportIcon = (name: string) => {
     const n = (name || "").toLowerCase();
     if (n.includes("บาส")) return <Dribbble size={20} className="icon-sport" />;
@@ -59,7 +89,6 @@ export default function EquipmentPage() {
 
   return (
     <div className="equipment-container">
-      {/* Tabs Navigation */}
       <nav className="tab-header">
         <button className={activeTab === "borrow" ? "active" : ""} onClick={() => setActiveTab("borrow")}>ยืมอุปกรณ์</button>
         <button className={activeTab === "return" ? "active" : ""} onClick={() => setActiveTab("return")}>คืนอุปกรณ์</button>
@@ -67,34 +96,28 @@ export default function EquipmentPage() {
       </nav>
 
       <div className="content-layout">
-        {/* --- แท็บยืมอุปกรณ์ --- */}
         {activeTab === "borrow" && (
           <div className="borrow-vertical-flow">
             <section className="panel info-section">
               <h4 className="title-sm"><User size={18} /> ข้อมูลผู้ยืม</h4>
               <div className="borrow-form-inputs">
                 <div className="input-row">
-                  <div className="field-group">
-                    <label>ชื่อ-นามสกุล</label>
+                  <div className="field-group"><label>ชื่อ-นามสกุล</label>
                     <input type="text" placeholder="ชื่อ-นามสกุล" value={studentInfo.name} onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} />
                   </div>
-                  <div className="field-group">
-                    <label>รหัสนิสิต</label>
-                    <input type="text" placeholder="รหัส 8 หลัก" maxLength={8} value={studentInfo.id} onChange={e => setStudentInfo({...studentInfo, id: e.target.value})} />
+                  <div className="field-group"><label>รหัสนิสิต</label>
+                    <input type="text" placeholder="รหัสนิสิต" maxLength={8} value={studentInfo.id} onChange={e => setStudentInfo({...studentInfo, id: e.target.value})} />
                   </div>
                 </div>
                 <div className="input-row">
-                  <div className="field-group">
-                    <label>คณะ / หน่วยงาน</label>
+                  <div className="field-group"><label>คณะ / หน่วยงาน</label>
                     <select value={studentInfo.faculty} onChange={e => setStudentInfo({...studentInfo, faculty: e.target.value})}>
                       <option value="">เลือกคณะ</option>
-                      <option value="IT">เทคโนโลยีสารสนเทศ</option>
-                      <option value="Nurse">พยาบาลศาสตร์</option>
+                      {faculties.map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
-                  <div className="field-group">
-                    <label>เบอร์โทรศัพท์</label>
-                    <input type="text" placeholder="08XXXXXXXX" maxLength={10} value={studentInfo.phone} onChange={e => setStudentInfo({...studentInfo, phone: e.target.value})} />
+                  <div className="field-group"><label>เบอร์โทรศัพท์</label>
+                    <input type="text" placeholder="เบอร์โทรศัพท์" maxLength={10} value={studentInfo.phone} onChange={e => setStudentInfo({...studentInfo, phone: e.target.value})} />
                   </div>
                 </div>
               </div>
@@ -105,8 +128,7 @@ export default function EquipmentPage() {
               <div className="stock-grid-minimal">
                 {stocks.map(item => (
                   <div key={item.name} className="stock-card-mini">
-                    <div className="info-with-icon">
-                      {getSportIcon(item.name)}
+                    <div className="info-with-icon">{getSportIcon(item.name)}
                       <div className="txt"><strong>{item.name}</strong><small>คงเหลือ {item.stock}</small></div>
                     </div>
                     <div className="qty-picker">
@@ -130,41 +152,34 @@ export default function EquipmentPage() {
                     </div>
                   ))}
                 </div>
-                <button className="submit-btn-large">ยืนยันการยืมอุปกรณ์</button>
+                <button className="submit-btn-large" onClick={handleBorrowSubmit}>ยืนยันการยืมอุปกรณ์</button>
               </section>
             )}
           </div>
         )}
 
-        {/* --- แท็บคืนอุปกรณ์ --- */}
         {activeTab === "return" && (
           <div className="return-layout">
-            <div className="search-bar"><Search size={18} /><input placeholder="ค้นหาด้วยรหัสหรือชื่อ..." /></div>
             <div className="accordion-list">
               {pendingReturns.map(user => (
                 <div key={user.id} className={`acc-item ${expandedId === user.id ? 'open' : ''}`}>
                   <div className="acc-header" onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}>
-                    <div className="header-text"><strong>{user.id}</strong> <span>{user.name}</span></div>
+                    <div className="header-text"><strong>{user.id}</strong> <span>{user.faculty}</span></div>
                     {expandedId === user.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                   <div className="acc-body">
                     <table className="return-table-detail">
-                      <thead>
-                        <tr><th>รายการ</th><th>ยืม</th><th>ค้าง</th><th>ระบุคืน</th><th>จัดการ</th></tr>
-                      </thead>
+                      <thead><tr><th>รายการ</th><th>ค้าง</th><th>จัดการ</th></tr></thead>
                       <tbody>
-                        {user.items.map((item, i) => (
+                        {user.items.map((item: any, i: number) => (
                           <tr key={i}>
-                            <td data-label="รายการ"><div className="item-with-icon-only">{getSportIcon(item.name)}<span>{item.name}</span></div></td>
-                            <td data-label="ยืม">{item.totalBorrowed}</td>
-                            <td data-label="ค้าง" className="txt-pending">{item.qty}</td>
-                            <td data-label="ระบุคืน"><input type="number" className="input-qty-return" defaultValue={item.qty} /></td>
-                            <td data-label="จัดการ"><button className="btn-return-line">ยืนยัน</button></td>
+                            <td><div className="item-with-icon-only">{getSportIcon(item.equipment)}<span>{item.equipment}</span></div></td>
+                            <td className="txt-pending">{item.remaining}</td>
+                            <td><button className="btn-return-line" onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}>ยืนยันคืน</button></td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                    <div className="return-footer-actions"><button className="btn-return-all-main">คืนที่เหลือทั้งหมด</button></div>
                   </div>
                 </div>
               ))}
@@ -172,23 +187,22 @@ export default function EquipmentPage() {
           </div>
         )}
 
-        {/* --- แท็บประวัติการยืม-คืน --- */}
         {activeTab === "history" && (
           <div className="history-layout">
             <div className="panel history-table-panel">
-              <h4 className="title-sm"><History size={18} /> รายการประวัติทั้งหมด</h4>
+              <h4 className="title-sm"><History size={18} /> รายการประวัติวันนี้</h4>
               <table className="history-table">
-                <thead>
-                  <tr><th>วันที่คืน</th><th>ผู้ยืม</th><th>รายการ</th><th>จำนวน</th><th>สถานะ</th></tr>
-                </thead>
+                <thead><tr><th>เวลา</th><th>ผู้ยืม</th><th>รายการ</th><th>จำนวน</th><th>สถานะ</th></tr></thead>
                 <tbody>
-                  {borrowHistory.map((h, i) => (
+                  {borrowHistory.map((h: any, i: number) => (
                     <tr key={i}>
-                      <td data-label="วันที่">{h.date}</td>
-                      <td data-label="ผู้ยืม"><strong>{h.id}</strong><br /><small>{h.name}</small></td>
-                      <td data-label="รายการ"><div className="item-with-icon-only">{getSportIcon(h.item)}<span>{h.item}</span></div></td>
-                      <td data-label="จำนวน">{h.qty} ชิ้น</td>
-                      <td data-label="สถานะ"><span className="status-complete"><CheckCircle2 size={16} /> คืนแล้ว</span></td>
+                      <td>{h.time}</td>
+                      <td><strong>{h.student_id}</strong><br /><small>{h.faculty}</small></td>
+                      <td>{h.equipment}</td>
+                      <td>{h.qty} ชิ้น</td>
+                      <td><span className={h.action === "return" ? "status-complete" : "status-pending"}>
+                        {h.action === "return" ? <><CheckCircle2 size={16} /> คืนแล้ว</> : "กำลังยืม"}
+                      </span></td>
                     </tr>
                   ))}
                 </tbody>
