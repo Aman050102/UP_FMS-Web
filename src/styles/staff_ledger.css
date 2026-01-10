@@ -115,12 +115,8 @@ body[data-page="staff-borrow-ledger"] .fld > span {
   color: #4c1d95;
 }
 
-body[data-page="staff-borrow-ledger"]
-  .fld
-  input[type="text"],
-body[data-page="staff-borrow-ledger"]
-  .fld
-  input[type="date"] {
+body[data-page="staff-borrow-ledger"] .fld input[type="text"],
+body[data-page="staff-borrow-ledger"] .fld input[type="date"] {
   min-height: 44px;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -133,9 +129,7 @@ body[data-page="staff-borrow-ledger"]
     box-shadow 0.16s ease;
 }
 
-body[data-page="staff-borrow-ledger"]
-  .fld
-  input:focus-visible {
+body[data-page="staff-borrow-ledger"] .fld input:focus-visible {
   outline: 0;
   border-color: var(--focus);
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);

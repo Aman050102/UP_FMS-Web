@@ -17,10 +17,10 @@ export default function CheckinFeedback() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const todayStr = new Date().toLocaleDateString('th-TH', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
+  const todayStr = new Date().toLocaleDateString("th-TH", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
   });
 
   // จัดการการเลือกรูปภาพ
@@ -57,7 +57,9 @@ export default function CheckinFeedback() {
         <section className="fb-card">
           <div className="fb-header">
             <h1>แบบฟอร์มแสดงความคิดเห็น</h1>
-            <p className="fb-subtitle">แสดงความคิดเห็นและแนบหลักฐานการใช้บริการสนามกีฬา</p>
+            <p className="fb-subtitle">
+              แสดงความคิดเห็นและแนบหลักฐานการใช้บริการสนามกีฬา
+            </p>
           </div>
 
           <div className="fb-basic">
@@ -69,8 +71,10 @@ export default function CheckinFeedback() {
                   value={facility}
                   onChange={(e) => setFacility(e.target.value)}
                 >
-                  {FACILITY_OPTIONS.map(opt => (
-                    <option key={opt.k} value={opt.k}>{opt.name}</option>
+                  {FACILITY_OPTIONS.map((opt) => (
+                    <option key={opt.k} value={opt.k}>
+                      {opt.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -84,33 +88,71 @@ export default function CheckinFeedback() {
           <form className="fb-form" onSubmit={onSubmit}>
             {/* ส่วนอัปโหลดรูปภาพใบลงทะเบียน (แทนที่การให้คะแนนดาว) */}
             <div className="fb-field">
-              <label className="fb-label">ส่งรูปภาพใบลงทะเบียน (Proof of Registration)</label>
+              <label className="fb-label">
+                ส่งรูปภาพใบลงทะเบียน (Proof of Registration)
+              </label>
 
               {!imagePreview ? (
-                <label className="fb-file-box" style={{ cursor: 'pointer', textAlign: 'center' }}>
+                <label
+                  className="fb-file-box"
+                  style={{ cursor: "pointer", textAlign: "center" }}
+                >
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageChange}
                     hidden
                   />
-                  <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                  <div
+                    style={{
+                      padding: "20px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: "10px",
+                    }}
+                  >
                     <Camera size={48} color="#muted" />
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>คลิกเพื่อถ่ายรูปหรือเลือกรูปภาพ</span>
+                    <span style={{ color: "#64748b", fontWeight: 600 }}>
+                      คลิกเพื่อถ่ายรูปหรือเลือกรูปภาพ
+                    </span>
                   </div>
                 </label>
               ) : (
-                <div className="fb-image-preview-container" style={{ position: 'relative', marginTop: '10px' }}>
+                <div
+                  className="fb-image-preview-container"
+                  style={{ position: "relative", marginTop: "10px" }}
+                >
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    style={{ width: '100%', borderRadius: '16px', maxHeight: '300px', objectFit: 'cover', border: '2px solid var(--divider)' }}
+                    style={{
+                      width: "100%",
+                      borderRadius: "16px",
+                      maxHeight: "300px",
+                      objectFit: "cover",
+                      border: "2px solid var(--divider)",
+                    }}
                   />
                   <button
                     type="button"
                     className="fb-remove-img"
                     onClick={() => setImagePreview(null)}
-                    style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    style={{
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      background: "#ef4444",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "30px",
+                      height: "30px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
                   >
                     <X size={18} />
                   </button>
@@ -119,12 +161,14 @@ export default function CheckinFeedback() {
             </div>
 
             <div className="fb-field">
-              <label className="fb-label">ปัญหาที่พบหรือข้อเสนอแนะเพิ่มเติม</label>
+              <label className="fb-label">
+                ปัญหาที่พบหรือข้อเสนอแนะเพิ่มเติม
+              </label>
               <textarea
                 className="fb-textarea"
                 placeholder="ระบุรายละเอียดเพิ่มเติม (ถ้ามี)..."
                 value={problems}
-                onChange={e => setProblems(e.target.value)}
+                onChange={(e) => setProblems(e.target.value)}
               />
             </div>
 

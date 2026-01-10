@@ -14,7 +14,7 @@ export async function apiGet<T>(path: string, init?: RequestInit): Promise<T> {
 export async function apiPost<TReq, TRes>(
   path: string,
   body: TReq,
-  init?: RequestInit
+  init?: RequestInit,
 ): Promise<TRes> {
   const r = await fetch(`${API_BASE}${path}`, {
     credentials: "include",

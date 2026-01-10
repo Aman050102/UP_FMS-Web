@@ -30,7 +30,11 @@ body {
 /* พื้นหลังเหมือนหน้า login */
 .login-bg.reg-bg {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: linear-gradient(
+    135deg,
+    var(--gradient-start),
+    var(--gradient-end)
+  );
   display: flex;
   align-items: center;
   justify-content: center;

@@ -13,7 +13,7 @@
 .wrap[data-page="checkin"] {
   min-height: 100vh;
   background: var(--bg-gradient);
-  font-family: 'Inter', 'Kanit', sans-serif; /* เพิ่มฟอนต์ไทย */
+  font-family: "Inter", "Kanit", sans-serif; /* เพิ่มฟอนต์ไทย */
   color: var(--text-main);
   padding: 20px; /* ลด padding ลงสำหรับจอเล็ก */
 }
@@ -28,7 +28,11 @@
 .date-badge {
   display: inline-flex;
   padding: 8px 24px;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+  background: linear-gradient(
+    90deg,
+    var(--brand-primary),
+    var(--brand-secondary)
+  );
   color: white;
   border-radius: 100px;
   font-weight: 700;
@@ -65,7 +69,10 @@
 /* Grid Layouts - ปรับให้ Desktop แสดง 2-3 คอลัมน์ */
 .grid-top {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* ปรับคอลัมน์อัตโนมัติ */
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(240px, 1fr)
+  ); /* ปรับคอลัมน์อัตโนมัติ */
   gap: 20px;
 }
 
@@ -89,8 +96,14 @@
   box-shadow: 0 12px 25px rgba(139, 92, 246, 0.15);
 }
 
-.facility-btn .icon { font-size: 3rem; }
-.facility-btn .name { font-weight: 700; font-size: 1.1rem; color: #334155; }
+.facility-btn .icon {
+  font-size: 3rem;
+}
+.facility-btn .name {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #334155;
+}
 
 /* Sub-facility Grid (Outdoor) - Desktop: 3 คอลัมน์, Tablet: 2 คอลัมน์ */
 .grid-outdoor {
@@ -151,7 +164,11 @@
   margin: 20px auto 0;
   display: block;
   padding: 20px;
-  background: linear-gradient(90deg, var(--brand-primary), var(--brand-secondary));
+  background: linear-gradient(
+    90deg,
+    var(--brand-primary),
+    var(--brand-secondary)
+  );
   color: white;
   border: none;
   border-radius: 18px;
@@ -220,7 +237,9 @@
     padding: 16px 24px;
     justify-content: flex-start;
   }
-  .facility-btn .icon { font-size: 2rem; }
+  .facility-btn .icon {
+    font-size: 2rem;
+  }
 }
 /* สไตล์ปุ่มย้อนกลับ */
 .back-btn {

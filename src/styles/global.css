@@ -1,16 +1,40 @@
 /* src/styles/global.css */
+@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap");
+
 :root {
-  --primary-purple: #5f5aa2;
-  --bg-gray: #f0f0f0;
+  /* เน้นโทนทางการ (Professional Tones) */
+  --primary: #5d4b9c; /* ม่วงเข้มทางการ */
+  --primary-hover: #4a3b82;
+  --primary-light: #f4f2fa;
+
+  --bg-gray: #f8fafc; /* พื้นหลังสีควันบุหรี่ สะอาดตา */
   --white: #ffffff;
+  --text-main: #1e293b; /* Slate 800 สำหรับตัวอักษรหลัก */
+  --text-muted: #64748b; /* Slate 500 สำหรับตัวอักษรรอง */
+
+  --border-color: #e2e8f0; /* ขอบบางมินิมอล */
   --header-height: 70px;
+
+  /* Shadows แบบนวลตา (Soft Shadows) */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  --radius: 12px; /* ความมนมาตรฐาน */
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Kanit', sans-serif;
+  font-family: "Kanit", sans-serif;
   background-color: var(--bg-gray);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* โครงสร้างหลักแบบ YouTube Style */
@@ -20,23 +44,91 @@ body {
   min-height: 100vh;
 }
 
-/* เนื้อหาหลัก: สำคัญมาก! ต้องมี margin-top เท่ากับความสูง Header */
+/* เนื้อหาหลัก: จัดการระยะห่างและตำแหน่ง */
 .content-area {
   flex: 1;
   margin-top: var(--header-height);
-  padding: 40px 20px;
+  padding: clamp(20px, 5vw, 40px); /* ยืดหยุ่นตามขนาดหน้าจอ */
   display: flex;
   flex-direction: column;
-  align-items: center; /* จัดเนื้อหาให้อยู่กลางจอแบบรูป 13.03.44 */
+  align-items: center;
+  width: 100%;
 }
 
-/* จัดระเบียบส่วนหัวข้อเมนู */
+/* ส่วนหัวข้อเมนู (Title Section) */
 .section-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: #333;
-  margin-bottom: 30px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 32px;
   text-align: center;
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
+}
+
+/* --- Global Components (ใช้ร่วมกันทุกหน้า) --- */
+
+/* การ์ดแบบมินิมอล */
+.card-minimal {
+  background: var(--white);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  width: 100%;
+  max-width: 900px;
+  transition: box-shadow 0.2s ease;
+}
+
+.card-minimal:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ปุ่มมาตรฐาน */
+.btn-base {
+  height: 44px;
+  padding: 0 24px;
+  border-radius: 10px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* อินพุตแบบมินิมอล */
+.input-base {
+  width: 100%;
+  height: 44px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 14px;
+  background: var(--white);
+  transition: border-color 0.2s;
+}
+
+.input-base:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(93, 75, 156, 0.1);
+}
+
+/* ซ่อน Scrollbar ที่ไม่จำเป็นแต่ยัง Scroll ได้ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

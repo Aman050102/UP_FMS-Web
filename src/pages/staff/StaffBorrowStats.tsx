@@ -1,199 +1,199 @@
-import { useEffect, useState, useMemo, type ChangeEvent } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
+  ArcElement,
   Tooltip,
   Legend,
-  type ChartData,
+  CategoryScale,
+  LinearScale,
 } from "chart.js";
-import { Bar } from "react-chartjs-2";
-import HeaderStaff from "../../components/HeaderStaff";
+import { Doughnut } from "react-chartjs-2";
+import { Calendar, Download, Package } from "lucide-react"; // เปลี่ยนเป็นไอคอน Download
 import "../../styles/borrow_stats.css";
 
-// ลงทะเบียน ChartJS Modules
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
 
-// ---------- Types ----------
-interface StatItem {
-  label: string;
-  count: number;
-}
-
-interface StatsResponse {
-  ok: boolean;
-  data: StatItem[];
-}
-
-const BACKEND: string =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ||
-  "http://localhost:8000";
-
-const API_STATS = `${BACKEND}/api/staff/borrow-stats/`;
-
-export default function StaffBorrowStatsPage() {
-  const [displayName] = useState<string>(
-    localStorage.getItem("display_name") || "เจ้าหน้าที่"
+export default function StaffBorrowStats() {
+  const [dateFrom, setDateFrom] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+      .toISOString()
+      .split("T")[0],
   );
-  
-  // Date State
-  const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const [dateFrom, setDateFrom] = useState<string>(todayISO);
-  const [dateTo, setDateTo] = useState<string>(todayISO);
-  
-  // Data State
-  const [stats, setStats] = useState<StatItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [dateTo, setDateTo] = useState(
+    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0],
+  );
+  const [rows, setRows] = useState<{ equipment: string; qty: number }[]>([]);
+  const [total, setTotal] = useState(0);
 
-  // Fetch Logic
-  const fetchStats = async () => {
-    setLoading(true);
+  const loadData = async () => {
     try {
-      const params = new URLSearchParams({
-        start_date: dateFrom,
-        end_date: dateTo,
-      });
-      const res = await fetch(`${API_STATS}?${params.toString()}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Network response was not ok");
-      
-      const result: StatsResponse = await res.json();
-      if (result.ok) {
-        setStats(result.data);
+      const API_BASE =
+        import.meta.env.VITE_API_BASE_URL ||
+        "https://up-fms-api-hono.aman02012548.workers.dev";
+      const res = await fetch(
+        `${API_BASE}/api/staff/borrow-records/stats?from=${dateFrom}&to=${dateTo}&action=borrow`,
+      );
+      const data = await res.json();
+      if (data?.ok) {
+        setRows(data.rows || []);
+        setTotal(data.total || 0);
       }
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  // โหลดข้อมูลเมื่อวันที่เปลี่ยน (เหมือน Logic เดิมใน JS)
   useEffect(() => {
-    fetchStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadData();
   }, [dateFrom, dateTo]);
 
-  // คำนวณยอดรวม
-  const totalCount = useMemo(() => {
-    return stats.reduce((sum, item) => sum + item.count, 0);
-  }, [stats]);
+  // --- ฟังก์ชันดาวน์โหลด Excel (CSV) ---
+  const handleDownloadExcel = () => {
+    if (rows.length === 0) {
+      alert("ไม่มีข้อมูลสำหรับการดาวน์โหลด");
+      return;
+    }
 
-  // Chart Data Configuration
-  const chartData: ChartData<"bar"> = {
-    labels: stats.map((item) => item.label),
+    // สร้าง Header และเนื้อหา CSV
+    const header = ["ลำดับ", "รายการอุปกรณ์", "จำนวนครั้งที่ยืม"];
+    const csvContent = [
+      header.join(","), // บรรทัดหัวตาราง
+      ...rows.map((r, i) => `${i + 1},${r.equipment},${r.qty}`), // ข้อมูลในตาราง
+      `,รวมทั้งสิ้น,${total}`, // บรรทัดสรุปผล
+    ].join("\n");
+
+    // สร้าง Blob และ Link สำหรับดาวน์โหลด
+    const blob = new Blob(["\uFEFF" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    // ตั้งชื่อไฟล์ตามวันที่ ปี-เดือน (เช่น report_2026-01-01_to_2026-01-31.csv)
+    link.setAttribute("href", url);
+    link.setAttribute(
+      "download",
+      `equipment_report_${dateFrom}_to_${dateTo}.csv`,
+    );
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const chartData = {
+    labels: rows.length > 0 ? rows.map((r) => r.equipment) : ["No Data"],
     datasets: [
       {
-        label: "จำนวนครั้งการยืม",
-        data: stats.map((item) => item.count),
-        backgroundColor: "rgba(54, 162, 235, 0.6)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1,
+        data: rows.length > 0 ? rows.map((r) => r.qty) : [1],
+        backgroundColor:
+          rows.length > 0
+            ? ["#818cf8", "#6366f1", "#4f46e5", "#4338ca", "#3730a3", "#312e81"]
+            : ["#f1f5f9"],
+        hoverOffset: 20,
+        borderWidth: 0,
       },
     ],
   };
 
-  // Export & Print Handlers
-  const handleExportExcel = () => {
-    const url = `${BACKEND}/api/staff/export-borrow-stats-csv/?start_date=${dateFrom}&end_date=${dateTo}`;
-    window.location.href = url;
-  };
-
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div className="borrow-stats-page">
-      <HeaderStaff displayName={displayName} BACKEND={BACKEND} />
-
-      <main className="wrap">
-        <section className="toolbar">
-          <div className="date-range">
-            <label>ช่วงวันที่ :</label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setDateFrom(e.target.value)}
-            />
-            <span>—</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setDateTo(e.target.value)}
-            />
+    <div className="stats-container">
+      <div className="stats-glass-wrapper">
+        {/* Header Section */}
+        <header className="stats-header-minimal no-print">
+          <div className="brand-badge">
+            <Package size={16} />
+            <span>Equipment Insights</span>
           </div>
-
-          <div className="actions">
-            <button className="btn" onClick={handleExportExcel} type="button">
-              ดาวน์โหลด Excel
-            </button>
-            <button className="btn" id="btnPdf" type="button">ดาวน์โหลด PDF</button>
-            <button className="btn" id="btnDocx" type="button">ดาวน์โหลด DOCX</button>
-            <button className="btn" onClick={handlePrint} type="button">
-              พิมพ์เป็น PDF (บราวเซอร์)
+          <div className="header-actions">
+            <div className="input-with-icon">
+              <Calendar size={14} />
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+              <span className="to-txt">to</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
+            </div>
+            {/* เปลี่ยนเป็นปุ่มดาวน์โหลด */}
+            <button
+              onClick={handleDownloadExcel}
+              className="btn-icon-round"
+              title="Download Excel"
+            >
+              <Download size={18} />
             </button>
           </div>
-        </section>
+        </header>
 
-        <section className="card">
-          <h2 id="monthTitle">สถิติการยืม–คืน</h2>
-          <div className="chart-container" style={{ position: "relative", height: "400px", width: "100%" }}>
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>กำลังโหลดข้อมูล...</div>
-            ) : (
-              <Bar
+        <main className="stats-grid">
+          {/* Chart Section */}
+          <section className="chart-wrapper">
+            <div className="doughnut-focus">
+              <Doughnut
                 data={chartData}
                 options={{
-                  responsive: true,
                   maintainAspectRatio: false,
-                  plugins: {
-                    legend: { position: "top" as const },
-                  },
+                  cutout: "82%",
+                  plugins: { legend: { display: false } },
                 }}
               />
-            )}
-          </div>
-        </section>
+              <div className="center-stats">
+                <span className="total-val">{total.toLocaleString()}</span>
+                <span className="total-lbl">Total Borrows</span>
+              </div>
+            </div>
+            <div className="chart-legend-grid">
+              {rows.map((r, i) => (
+                <div key={i} className="legend-item-min">
+                  <span
+                    className="dot"
+                    style={{
+                      backgroundColor: chartData.datasets[0].backgroundColor[
+                        i
+                      ] as string,
+                    }}
+                  ></span>
+                  <span className="label">{r.equipment}</span>
+                  <span className="val">{r.qty}</span>
+                </div>
+              ))}
+            </div>
+          </section>
 
-        <section className="card">
-          <table className="table" id="tbl">
-            <thead>
-              <tr>
-                <th style={{ width: "80px" }}>ลำดับ</th>
-                <th>รายการ</th>
-                <th style={{ width: "140px" }}>จำนวนครั้ง</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.length === 0 && !loading ? (
+          {/* Table Section */}
+          <section className="table-wrapper">
+            <h3 className="sub-title">Detailed Report</h3>
+            <table className="stats-table-min">
+              <thead>
                 <tr>
-                  <td colSpan={3} style={{ textAlign: "center", padding: "20px" }}>
-                    ไม่พบข้อมูลในช่วงเวลาที่เลือก
-                  </td>
+                  <th>Equipment</th>
+                  <th className="align-right">Usage</th>
                 </tr>
-              ) : (
-                stats.map((item, index) => (
-                  <tr key={`${item.label}-${index}`}>
-                    <td>{index + 1}</td>
-                    <td>{item.label}</td>
-                    <td>{item.count.toLocaleString()}</td>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={i}>
+                    <td>{r.equipment}</td>
+                    <td className="align-right">{r.qty.toLocaleString()}</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-            <tfoot>
-              <tr className="sum" style={{ fontWeight: "bold", backgroundColor: "#f9f9f9" }}>
-                <td colSpan={2}>รวมการยืมอุปกรณ์ทั้งหมด</td>
-                <td id="sumCell">{totalCount.toLocaleString()}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </section>
-      </main>
+                ))}
+              </tbody>
+            </table>
+            <div className="summary-banner">
+              <span>สรุปยอดรวมทั้งสิ้น</span>
+              <strong>{total.toLocaleString()} รายการ</strong>
+            </div>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

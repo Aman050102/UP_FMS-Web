@@ -294,7 +294,10 @@
   transition: transform 0.2s;
 }
 
-.fb-btn-primary:hover { transform: translateY(-2px); opacity: 0.95; }
+.fb-btn-primary:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+}
 
 .fb-btn-ghost {
   background: transparent;
@@ -306,6 +309,11 @@
 }
 
 @media (max-width: 600px) {
-  .fb-basic-row { grid-template-columns: 1fr; gap: 10px; }
-  .fb-card { padding: 24px; }
+  .fb-basic-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .fb-card {
+    padding: 24px;
+  }
 }

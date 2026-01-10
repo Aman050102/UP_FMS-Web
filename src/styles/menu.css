@@ -107,7 +107,8 @@
   }
 }
 /* จัดตำแหน่งเนื้อหาเมนูให้อยู่กลางจอ */
-.menu-container, [data-page="staff_menu"] main {
+.menu-container,
+[data-page="staff_menu"] main {
   max-width: 900px;
   margin: 0 auto;
   padding: 20px;
@@ -136,7 +137,9 @@
   border-radius: 28px; /* เพิ่มความมนให้เหมือนในรูป */
   padding: 40px 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   border: 1px solid #f0f0f0;
 }
 
