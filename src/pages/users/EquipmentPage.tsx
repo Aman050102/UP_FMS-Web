@@ -19,13 +19,35 @@ const API = (
   "https://up-fms-api-hono.aman02012548.workers.dev"
 ).replace(/\/$/, "");
 
+// รายชื่อคณะ/หน่วยงาน มหาวิทยาลัยพะเยา
+const UP_FACULTIES = [
+  "คณะเกษตรศาสตร์และทรัพยากรธรรมชาติ",
+  "คณะเทคโนโลยีสารสนเทศและการสื่อสาร",
+  "คณะนิติศาสตร์",
+  "คณะพยาบาลศาสตร์",
+  "คณะแพทยศาสตร์",
+  "คณะเภสัชศาสตร์",
+  "คณะบริหารธุรกิจและนิเทศศาสตร์",
+  "คณะวิทยาศาสตร์",
+  "คณะวิทยาศาสตร์การแพทย์",
+  "คณะวิศวกรรมศาสตร์",
+  "คณะศิลปศาสตร์",
+  "คณะสถาปัตยกรรมศาสตร์และศิลปกรรมศาสตร์",
+  "คณะสหเวชศาสตร์",
+  "คณะพลังงานและสิ่งแวดล้อม",
+  "คณะทันตแพทยศาสตร์",
+  "คณะรัฐศาสตร์และสังคมศาสตร์",
+  "คณะสาธารณสุขศาสตร์",
+  "วิทยาลัยการศึกษา",
+  "โรงเรียนสาธิตมหาวิทยาลัยพะเยา",
+];
+
 export default function EquipmentPage() {
   const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">(
     "borrow"
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const [faculties, setFaculties] = useState<string[]>([]);
   const [stocks, setStocks] = useState<{ name: string; stock: number }[]>([]);
   const [pendingReturns, setPendingReturns] = useState<any[]>([]);
   const [borrowHistory, setBorrowHistory] = useState<any[]>([]);
@@ -76,15 +98,12 @@ export default function EquipmentPage() {
   };
 
   useEffect(() => {
-    fetch(`${API}/api/faculties/`)
-      .then((res) => res.json())
-      .then((data) => data.ok && setFaculties(data.faculties));
     refreshData();
   }, [activeTab]);
 
   const handleBorrowSubmit = async () => {
-    if (!studentInfo.id || borrowItems.length === 0)
-      return alert("กรุณาระบุรหัสนิสิตและอุปกรณ์");
+    if (!studentInfo.id || !studentInfo.faculty || borrowItems.length === 0)
+      return alert("กรุณาระบุรหัสนิสิต คณะ และเลือกอุปกรณ์");
     try {
       for (const item of borrowItems) {
         await fetch(`${API}/api/equipment/borrow/`, {
@@ -207,11 +226,10 @@ export default function EquipmentPage() {
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">รหัสนิสิต</label>
+                    <label className="text-xs font-bold text-text-muted">รหัสนิสิต / รหัสนักเรียน</label>
                     <input
                       type="text"
-                      placeholder="รหัสนิสิต 8 หลัก"
-                      maxLength={8}
+                      placeholder="ระบุรหัสประจำตัว"
                       className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       value={studentInfo.id}
                       onChange={(e) => setStudentInfo({ ...studentInfo, id: e.target.value })}
@@ -226,8 +244,8 @@ export default function EquipmentPage() {
                       value={studentInfo.faculty}
                       onChange={(e) => setStudentInfo({ ...studentInfo, faculty: e.target.value })}
                     >
-                      <option value="">เลือกคณะ</option>
-                      {faculties.map((f) => (
+                      <option value="">เลือกคณะ / หน่วยงาน</option>
+                      {UP_FACULTIES.map((f) => (
                         <option key={f} value={f}>{f}</option>
                       ))}
                     </select>

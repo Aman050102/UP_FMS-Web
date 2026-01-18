@@ -1,6 +1,10 @@
-@import "tailwindcss";
+/* 1. Google Fonts ต้องอยู่บนสุด */
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap");
 
+/* 2. Import Tailwind v4 */
+@import "tailwindcss";
+
+/* 3. การตั้งค่า Theme (v4 style) */
 @theme {
   --color-primary: #5f5aa2;
   --color-primary-dark: #4a4585;
@@ -21,8 +25,8 @@
   --font-kanit: "Kanit", sans-serif;
 }
 
+/* 4. Global Styles */
 @layer base {
-  /* ใน v4 บางครั้งต้องระบุสีตรงๆ หาก @apply หาตัวแปรไม่เจอในช่วงแรก */
   html, body {
     margin: 0;
     padding: 0;
@@ -35,6 +39,7 @@
   }
 }
 
+/* 5. Custom Utilities */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

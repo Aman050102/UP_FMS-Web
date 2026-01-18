@@ -15,13 +15,13 @@ export default function StaffMenu() {
     {
       title: "ข้อมูลการเข้าใช้สนาม",
       subtitle: "Sports Facility Usage Log",
-      path: "/staff/dashboard", // เปลี่ยนให้ตรงกับ Sidebar
+      path: "/staff/dashboard",
       icon: <FileText size={40} />
     },
     {
       title: "ข้อมูลสถิติการยืม-คืน",
       subtitle: "Equipment Loan Statistics",
-      path: "/staff/borrow-stats", // เปลี่ยนให้ตรงกับ Sidebar
+      path: "/staff/borrow-stats", 
       icon: <PieChart size={40} />
     },
     {
@@ -37,7 +37,7 @@ export default function StaffMenu() {
       icon: <ClipboardList size={40} />
     }
   ];
-  
+
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-bg-main font-kanit">
       <main className="flex-1 mt-header overflow-y-auto px-6 py-10 flex flex-col items-center custom-scrollbar">
