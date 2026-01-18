@@ -1,20 +1,21 @@
+// src/App.tsx
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./components/MainLayout";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 
-// หน้าของนิสิต
-import UserMenu from "./pages/users/UserMenu";
-import CheckinPage from "./pages/users/CheckinPage";
-import EquipmentPage from "./pages/users/EquipmentPage";
-import CheckinFeedback from "./pages/users/CheckinFeedback";
-
-// หน้าของเจ้าหน้าที่
+// Staff Pages
 import StaffMenu from "./pages/staff/StaffMenu";
 import StaffEquipmentManagePage from "./pages/staff/StaffEquipmentManagePage";
 import StaffBorrowLedgerPage from "./pages/staff/StaffBorrowLedgerPage";
 import StaffBorrowStats from "./pages/staff/StaffBorrowStats";
 import CheckinReportPage from "./pages/staff/CheckinReportPage";
+
+// User Pages
+import UserMenu from "./pages/users/UserMenu";
+import CheckinPage from "./pages/users/CheckinPage";
+import EquipmentPage from "./pages/users/EquipmentPage";
+import CheckinFeedback from "./pages/users/CheckinFeedback";
 
 export default function App() {
   return (
@@ -22,26 +23,25 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* กลุ่มหน้าสำหรับนิสิต */}
       <Route element={<MainLayout role="user" />}>
         <Route path="/user/menu" element={<UserMenu />} />
         <Route path="/checkin" element={<CheckinPage />} />
         <Route path="/equipment" element={<EquipmentPage />} />
-        <Route path="/checkin_feedback" element={<CheckinFeedback />} />{" "}
-        {/* เพิ่ม Route นี้ */}
+        <Route path="/checkin_feedback" element={<CheckinFeedback />} />
       </Route>
 
+      {/* กลุ่มหน้าสำหรับเจ้าหน้าที่ (ปรับ Path ให้ตรงกับ Sidebar) */}
       <Route element={<MainLayout role="staff" />}>
         <Route path="/staff/menu" element={<StaffMenu />} />
+        <Route path="/staff/dashboard" element={<CheckinReportPage />} /> {/* ปรับให้ตรงกับ Sidebar */}
         <Route path="/staff/equipment" element={<StaffEquipmentManagePage />} />
-        <Route
-          path="/staff/borrow-ledger"
-          element={<StaffBorrowLedgerPage />}
-        />
-        <Route path="/checkin_report" element={<CheckinReportPage />} />
-        <Route path="/staff_borrow_stats" element={<StaffBorrowStats />} />
+        <Route path="/staff/borrow-ledger" element={<StaffBorrowLedgerPage />} />
+        <Route path="/staff/borrow-stats" element={<StaffBorrowStats />} /> {/* ปรับให้ตรงกับ Sidebar */}
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

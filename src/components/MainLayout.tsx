@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import HeaderStaff from "./HeaderStaff";
 import HeaderUser from "./HeaderUser";
-import SidebarStaff from "./SidebarStaff";
+import HeaderStaff from "./HeaderStaff";
 import SidebarUser from "./SidebarUser";
+import SidebarStaff from "./SidebarStaff";
 
-export default function MainLayout({ role }: { role: "user" | "staff" }) {
+interface MainLayoutProps {
+  role: "user" | "staff";
+}
+
+export default function MainLayout({ role }: MainLayoutProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const displayName = localStorage.getItem("display_name") || "ผู้ใช้งาน";
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   return (
-    <div
-      className="app-layout"
-      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
-    >
+    <div className="flex flex-col h-screen overflow-hidden bg-bg-main font-kanit">
       {/* เลือก Header ตาม Role */}
       {role === "staff" ? (
         <HeaderStaff onToggleMenu={toggleMenu} displayName={displayName} />
@@ -22,42 +23,18 @@ export default function MainLayout({ role }: { role: "user" | "staff" }) {
         <HeaderUser onToggleMenu={toggleMenu} displayName={displayName} />
       )}
 
-      <div style={{ display: "flex", flex: 1, position: "relative" }}>
+      <div className="flex flex-1 overflow-hidden mt-header">
         {/* เลือก Sidebar ตาม Role */}
         {role === "staff" ? (
-          <SidebarStaff
-            open={isMenuOpen}
-            onClose={() => setIsMenuOpen(false)}
-          />
+          <SidebarStaff open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         ) : (
           <SidebarUser open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         )}
 
-        <main
-          className="content-area"
-          style={{
-            flex: 1,
-            paddingTop: "80px",
-            background: "#f8fafc",
-            minHeight: "100vh",
-          }}
-        >
+        <main className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-[#f8fafc]">
           <Outlet />
         </main>
       </div>
-
-      {isMenuOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setIsMenuOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.3)",
-            zIndex: 1001,
-          }}
-        />
-      )}
     </div>
   );
 }

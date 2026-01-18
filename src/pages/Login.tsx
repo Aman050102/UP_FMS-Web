@@ -1,5 +1,6 @@
 import { useState } from "react";
-import "../styles/login.css";
+import { Eye, EyeOff, UserPlus, LogIn } from "lucide-react";
+import dsaLogo from "../assets/dsa.png";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
@@ -23,7 +24,6 @@ export default function Login() {
 
     try {
       setLoading(true);
-
       const res = await fetch(`${API}/auth/login/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,22 +34,15 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) {
-        // จัดการกรณี HTTP 403 (Forbidden) บัญชียังไม่อนุมัติ
         if (res.status === 403 && data.status === "pending") {
-          throw new Error(
-            "บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติและมอบสิทธิ์เข้าใช้งาน",
-          );
+          throw new Error("บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติและมอบสิทธิ์เข้าใช้งาน");
         }
         throw new Error(data.error || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       }
 
-      // เก็บข้อมูลลง LocalStorage
       localStorage.setItem("display_name", data.full_name || data.username);
-      localStorage.setItem("user_role", data.role); // 'staff' หรือ 'person' (นิสิตช่วยงาน)
-
-      // Redirect ตาม Role ที่แอดมินมอบสิทธิ์ให้ในระบบหลังบ้าน
-      window.location.href =
-        data.role === "staff" ? "/staff/menu" : "/user/menu";
+      localStorage.setItem("user_role", data.role);
+      window.location.href = data.role === "staff" ? "/staff/menu" : "/user/menu";
     } catch (err: any) {
       setError(err?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
@@ -58,68 +51,77 @@ export default function Login() {
   };
 
   return (
-    <div className="login-bg">
-      <div className="login-card">
-        <div className="login-logo">
-          <img src="/img/dsa.png" alt="กองกิจการนิสิต" />
-        </div>
-        <h1 className="login-title-th">ระบบจัดการข้อมูลสนามกีฬา</h1>
-        <h2 className="login-title-th">กองกิจการนิสิต มหาวิทยาลัยพะเยา</h2>
-        <p className="login-title-en">UP-FMS | Field Management System</p>
+    <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-6 font-kanit animate-in fade-in duration-500">
+      <div className="w-full max-w-[500px] bg-white rounded-[28px] p-10 md:p-12 text-center shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
 
-        <form className="login-form" onSubmit={onSubmit}>
-          <label className="field">
-            <span className="field-label">Username / ชื่อผู้ใช้</span>
+        {/* Logo Section - แก้ไข src มาใช้ตัวแปร dsaLogo */}
+        <div className="mb-6">
+          <img
+            src={dsaLogo}
+            alt="กองกิจการนิสิต"
+            className="w-full h-[140px] object-contain mx-auto"
+          />
+        </div>
+
+        <div className="space-y-1 mb-8">
+          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">ระบบจัดการข้อมูลสนามกีฬา</h1>
+          <h2 className="text-lg font-bold text-[#2b2346]">กองกิจการนิสิต มหาวิทยาลัยพะเยา</h2>
+          <p className="text-sm text-[#756f8a] mt-2">UP-FMS | Field Management System</p>
+        </div>
+
+        <form className="space-y-6 text-left" onSubmit={onSubmit}>
+          {/* Username Field */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-bold text-[#2b2346] ml-1">Username / ชื่อผู้ใช้</label>
             <input
               type="text"
+              className="w-full py-3 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-lg"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               autoComplete="username"
             />
-          </label>
+          </div>
 
-          <label className="field">
-            <span className="field-label">Password / รหัสผ่าน</span>
-            <div className="field-input-with-toggle">
+          {/* Password Field */}
+          <div className="space-y-1.5 relative">
+            <label className="text-sm font-bold text-[#2b2346] ml-1">Password / รหัสผ่าน</label>
+            <div className="relative">
               <input
                 type={showPw ? "text" : "password"}
+                className="w-full py-3 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-lg pr-10"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
               <button
                 type="button"
-                className="pw-eye-btn"
-                onClick={() => setShowPw((v) => !v)}
+                className="absolute right-0 bottom-3 text-[#7c7894] hover:text-[#ec4899] cursor-pointer transition-colors"
+                onClick={() => setShowPw(!showPw)}
               >
-                {showPw ? (
-                  <svg viewBox="0 0 24 24" width="22" height="22">
-                    <path
-                      fill="currentColor"
-                      d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
-                    />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="22" height="22">
-                    <path
-                      fill="currentColor"
-                      d="M1 1 23 23M9.9 4.24A10.75 10.75 0 0 1 12 4c7 0 11 7 11 7a21.8 21.8 0 0 1-2.2 3.39M6.47 6.47A10.75 10.75 0 0 0 1 11s4 7 11 7a11 11 0 0 0 5.47-1.47"
-                    />
-                  </svg>
-                )}
+                {showPw ? <EyeOff size={22} /> : <Eye size={22} />}
               </button>
             </div>
-          </label>
+          </div>
 
-          {error && <p className="error">{error}</p>}
-          <button type="submit" className="btn-login" disabled={loading}>
+          {error && <p className="text-red-500 text-sm font-medium animate-pulse">{error}</p>}
+
+          {/* Login Button */}
+          <button
+            type="submit"
+            className="w-full py-3.5 mt-4 rounded-full text-white font-bold text-lg bg-gradient-to-r from-[#06b6d4] to-[#ec4899] hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            disabled={loading}
+          >
+            <LogIn size={20} />
             {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
           </button>
+
+          {/* Register Link Button */}
           <button
             type="button"
-            className="btn-secondary"
+            className="w-full py-3.5 rounded-full text-white font-bold text-lg bg-gradient-to-r from-[#4dd0e1] to-[#ec4899] hover:opacity-90 active:scale-[0.98] transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
             onClick={() => (window.location.href = `/register`)}
           >
+            <UserPlus size={20} />
             สร้างบัญชีใหม่
           </button>
         </form>

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import "../styles/register.css";
+import { Eye, EyeOff, UserPlus, ArrowLeft } from "lucide-react";
+// นำเข้ารูปภาพจาก src/assets เพื่อให้แสดงผลได้ถูกต้อง
+import dsaLogo from "../assets/dsa.png";
 
 const API = (
   import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
@@ -35,7 +37,6 @@ export default function Register() {
         email: email,
         username: username,
         password: pw,
-        // ส่งสถานะเริ่มต้นไปที่ Backend ให้รออนุมัติ (Pending)
         is_approved: false,
       };
 
@@ -47,7 +48,6 @@ export default function Register() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data?.error || `สมัครสมาชิกไม่สำเร็จ`);
 
       setOk("ลงทะเบียนสำเร็จ! กรุณารอแอดมินตรวจสอบและอนุมัติบัญชีของคุณ");
@@ -58,109 +58,118 @@ export default function Register() {
   };
 
   return (
-    <div className="login-bg reg-bg">
-      <div className="login-card reg-card">
-        <div className="login-logo">
-          <img src="/img/dsa.png" alt="กองกิจการนิสิต" />
-        </div>
-        <h1 className="login-title-th">สร้างบัญชีผู้ใช้งานใหม่</h1>
-        <p className="login-title-en">UP - Field Management System (UP-FMS)</p>
-        <p className="reg-subtitle">สมัครสมาชิกเพื่อเข้าใช้งานระบบ</p>
+    <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-4 md:p-8 font-kanit animate-in fade-in duration-500">
+      <div className="w-full max-w-[720px] bg-white rounded-[28px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
 
-        <form className="reg-form" onSubmit={submit} noValidate>
-          <div className="row1">
-            <label className="field">
-              <span className="field-label">ชื่อ-นามสกุล / Full Name</span>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                placeholder="นาย ใจดี มีสุข"
-              />
-            </label>
+        {/* Logo & Header - แก้ไขให้ใช้ตัวแปร dsaLogo */}
+        <div className="flex justify-center mb-4">
+          <img
+            src={dsaLogo}
+            alt="กองกิจการนิสิต"
+            className="w-full max-w-[500px] h-[110px] object-contain"
+          />
+        </div>
+
+        <div className="text-center space-y-1 mb-6">
+          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">สร้างบัญชีผู้ใช้งานใหม่</h1>
+          <p className="text-sm text-[#8b86a4]">UP - Field Management System (UP-FMS)</p>
+          <p className="text-sm text-[#8b86a4]">สมัครสมาชิกเพื่อเข้าใช้งานระบบ</p>
+        </div>
+
+        <form className="space-y-5" onSubmit={submit} noValidate>
+          {/* Row 1: Full Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-bold text-[#2b2346] ml-1">ชื่อ-นามสกุล / Full Name</label>
+            <input
+              className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              placeholder="นาย ใจดี มีสุข"
+            />
           </div>
 
-          <div className="row2">
-            <label className="field">
-              <span className="field-label">อีเมล / E-mail</span>
+          {/* Row 2: Email & Username */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[#2b2346] ml-1">อีเมล / E-mail</label>
               <input
                 type="email"
+                className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="example@up.ac.th"
               />
-            </label>
-            <label className="field">
-              <span className="field-label">ชื่อผู้ใช้ / Username</span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[#2b2346] ml-1">ชื่อผู้ใช้ / Username</label>
               <input
+                className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 placeholder="สำหรับใช้ Login"
               />
-            </label>
+            </div>
           </div>
 
-          <div className="row2">
-            <label className="field">
-              <span className="field-label">รหัสผ่าน / Password</span>
-              <div className="field-input-with-toggle">
+          {/* Row 3: Passwords */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-1.5 relative">
+              <label className="text-sm font-bold text-[#2b2346] ml-1">รหัสผ่าน / Password</label>
+              <div className="relative flex items-center">
                 <input
                   type={showPw ? "text" : "password"}
+                  className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base pr-10"
                   value={pw}
                   onChange={(e) => setPw(e.target.value)}
                   required
                 />
                 <button
                   type="button"
-                  className="pw-eye-btn"
-                  onClick={() => setShowPw((v) => !v)}
+                  className="absolute right-0 bottom-2 text-[#7c7894] hover:text-[#ec4899] transition-colors cursor-pointer"
+                  onClick={() => setShowPw(!showPw)}
                 >
-                  {showPw ? (
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                      <path
-                        fill="currentColor"
-                        d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"
-                      />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" width="20" height="20">
-                      <path
-                        fill="currentColor"
-                        d="M1 1 23 23M9.9 4.24A10.75 10.75 0 0 1 12 4c7 0 11 7 11 7a21.8 21.8 0 0 1-2.2 3.39M6.47 6.47A10.75 10.75 0 0 0 1 11s4 7 11 7a11 11 0 0 0 5.47-1.47"
-                      />
-                    </svg>
-                  )}
+                  {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-            </label>
-            <label className="field">
-              <span className="field-label">
-                ยืนยันรหัสผ่าน / Confirm Password
-              </span>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-bold text-[#2b2346] ml-1">ยืนยันรหัสผ่าน / Confirm Password</label>
               <input
                 type="password"
+                className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base"
                 value={pw2}
                 onChange={(e) => setPw2(e.target.value)}
                 required
               />
-            </label>
+            </div>
           </div>
 
-          {error && <p className="error-msg">{error}</p>}
-          {ok && <p className="ok-msg">{ok}</p>}
+          {/* Status Messages */}
+          {error && <p className="text-sm text-[#e11d48] font-medium animate-pulse">{error}</p>}
+          {ok && <p className="text-sm text-[#16a34a] font-medium bg-green-50 p-3 rounded-lg border border-green-100">{ok}</p>}
 
-          <button className="btn-login" type="submit">
-            ลงทะเบียนและรอการตรวจสอบ
-          </button>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => (window.location.href = "/login")}
-          >
-            ยกเลิกและกลับไปหน้าล็อกอิน
-          </button>
+          {/* Action Buttons */}
+          <div className="pt-2 space-y-4">
+            <button
+              type="submit"
+              className="w-full py-3 bg-gradient-to-r from-[#06b6d4] to-[#ec4899] text-white font-bold rounded-full shadow-[0_10px_30px_rgba(236,72,153,0.35)] hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+            >
+              <UserPlus size={20} />
+              ลงทะเบียน
+            </button>
+
+            <button
+              type="button"
+              className="w-full py-3 bg-gradient-to-r from-[#4dd0e1] to-[#ec4899] text-white font-bold rounded-full hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
+              onClick={() => (window.location.href = "/login")}
+            >
+              <ArrowLeft size={20} />
+              กลับไปหน้าล็อกอิน
+            </button>
+          </div>
         </form>
       </div>
     </div>
