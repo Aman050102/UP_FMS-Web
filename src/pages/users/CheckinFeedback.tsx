@@ -16,6 +16,12 @@ export default function CheckinFeedback() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ดึง API Base URL จาก env หรือใช้ค่าเริ่มต้น
+  const API = (
+    import.meta.env.VITE_API_BASE_URL ||
+    "https://up-fms-api-hono.aman02012548.workers.dev"
+  ).replace(/\/$/, "");
+
   const todayStr = new Date().toLocaleDateString("th-TH", {
     day: "numeric",
     month: "long",
@@ -25,6 +31,11 @@ export default function CheckinFeedback() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // ตรวจสอบขนาดไฟล์ (ไม่ควรเกิน 1MB สำหรับ D1 Text Column)
+      if (file.size > 1024 * 1024) {
+        alert("ขนาดรูปภาพใหญ่เกินไป กรุณาใช้รูปที่มีขนาดไม่เกิน 1MB");
+        return;
+      }
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result as string);
@@ -39,12 +50,35 @@ export default function CheckinFeedback() {
       alert("กรุณาแนบรูปภาพใบลงทะเบียน");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      alert("ขอบคุณสำหรับความคิดเห็น");
+    try {
+      const response = await fetch(`${API}/api/feedback/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          facility: facility,
+          problems: problems,
+          image_url: imagePreview, // ส่งข้อมูลรูปภาพแบบ Base64
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.ok) {
+        alert("ขอบคุณสำหรับความคิดเห็น ข้อมูลถูกบันทึกเรียบร้อยแล้ว");
+        navigate("/user/menu");
+      } else {
+        throw new Error(data.error || "เกิดข้อผิดพลาดในการบันทึก");
+      }
+    } catch (error: any) {
+      console.error("Feedback error:", error);
+      alert(`ไม่สามารถส่งข้อมูลได้: ${error.message}`);
+    } finally {
       setLoading(false);
-      navigate("/user/menu");
-    }, 1500);
+    }
   };
 
   return (
@@ -107,7 +141,7 @@ export default function CheckinFeedback() {
                       </div>
                       <div className="text-center">
                         <span className="block text-text-main font-bold">คลิกเพื่อถ่ายรูปหรือเลือกรูปภาพ</span>
-                        <span className="text-xs text-text-muted">รองรับไฟล์ภาพ JPG, PNG</span>
+                        <span className="text-xs text-text-muted">รองรับไฟล์ภาพ JPG, PNG (ไม่เกิน 1MB)</span>
                       </div>
                     </div>
                   </label>
