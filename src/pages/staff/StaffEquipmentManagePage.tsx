@@ -1,39 +1,52 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { Package, Plus, Trash2, Edit3, X, Save, Boxes } from "lucide-react";
+import { Package, Plus, Trash2, Edit3, X, Save, Boxes, LayoutGrid, ListFilter } from "lucide-react";
 
+// กำหนด URL ของ API จาก Environment หรือค่า Default
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
   "https://up-fms-api-hono.aman02012548.workers.dev"
 ).replace(/\/$/, "");
 
 export default function StaffEquipmentManagePage() {
-  const [displayName] = useState(localStorage.getItem("display_name") || "เจ้าหน้าที่");
   const [items, setItems] = useState<any[]>([]);
   const [equipName, setEquipName] = useState("");
   const [equipStock, setEquipStock] = useState("10");
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ดึงรายการอุปกรณ์ทั้งหมดจากระบบ
   const fetchList = async () => {
-    try {
-      const res = await fetch(`${API}/api/equipment/stock/`);
-      const data = await res.json();
-      if (data.ok) setItems(data.equipments);
-    } catch (e) {
-      console.error("Load failed");
+  try {
+    // ตรวจสอบว่า API URL ของคุณไม่มี / ปิดท้าย และเรียกไปที่ /stock
+    const res = await fetch(`${API}/api/staff/equipment/stock`);
+
+    // ตรวจสอบสถานะก่อนแปลงเป็น JSON
+    if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Server Error:", errorText);
+        return;
     }
-  };
+
+    const data = await res.json();
+    if (data.ok) setItems(data.equipments);
+  } catch (e) {
+    console.error("Fetch failed:", e);
+  }
+};
 
   useEffect(() => {
     fetchList();
   }, []);
 
+  // ฟังก์ชันบันทึกข้อมูล (ทั้งเพิ่มใหม่และแก้ไข)
   const handleSave = async () => {
     if (!equipName) return alert("กรุณาระบุชื่ออุปกรณ์");
+    if (parseInt(equipStock) < 0) return alert("จำนวนสต็อกต้องไม่ติดลบ");
+
     setLoading(true);
     try {
       const method = editingId ? "PATCH" : "POST";
+      // กำหนด URL ให้ตรงกับโครงสร้าง Hono Router
       const url = editingId
         ? `${API}/api/staff/equipment/${editingId}/`
         : `${API}/api/staff/equipment/`;
@@ -58,138 +71,180 @@ export default function StaffEquipmentManagePage() {
         alert(data.error || "บันทึกไม่สำเร็จ");
       }
     } catch (e) {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
     } finally {
       setLoading(false);
     }
   };
 
+  // ฟังก์ชันลบอุปกรณ์
   const deleteItem = async (id: number) => {
     if (!confirm("ยืนยันการลบอุปกรณ์นี้ออกจากระบบ?")) return;
     try {
-      const res = await fetch(`${API}/api/staff/equipment/${id}/`, { method: "DELETE" });
-      if (res.ok) fetchList();
+      const res = await fetch(`${API}/api/staff/equipment/${id}/`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        fetchList();
+      } else {
+        alert("ลบไม่สำเร็จ");
+      }
     } catch (e) {
-      alert("ลบไม่สำเร็จ");
+      alert("เกิดข้อผิดพลาดในการลบข้อมูล");
     }
   };
 
   return (
-    <div className="max-w-[1000px] mx-auto p-5 font-kanit animate-in fade-in duration-500">
+    <div className="max-w-[1200px] mx-auto p-6 font-kanit animate-in fade-in duration-700">
 
-      {/* Sub-navigation Tabs */}
-      <nav className="flex gap-4 mb-8 border-b border-border-main">
-        <Link to="/staff/equipment" className="pb-3 px-2 border-b-2 border-primary text-primary font-bold transition-all">
-          จัดการอุปกรณ์
-        </Link>
-        <Link to="/staff/borrow-ledger" className="pb-3 px-2 border-b-2 border-transparent text-text-muted hover:text-text-main transition-all">
-          บันทึกการยืม-คืน
-        </Link>
-      </nav>
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-xl">
+            <LayoutGrid size={28} className="text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">จัดการคลังอุปกรณ์กีฬา</h1>
+            <p className="text-gray-500 text-xs">ระบบควบคุมและติดตามรายการอุปกรณ์ส่วนกลาง</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
+           <Boxes size={18} className="text-gray-400" />
+           <span className="text-sm font-bold text-gray-600">อุปกรณ์ทั้งหมด: <span className="text-primary">{items.length}</span> รายการ</span>
+        </div>
+      </div>
 
       <div className="space-y-6">
-        {/* ส่วนเพิ่ม/แก้ไขอุปกรณ์ (Form Panel) */}
-        <section className="bg-surface border border-border-main rounded-2xl p-6 shadow-sm ring-4 ring-primary/5">
-          <h4 className="text-lg font-bold text-primary flex items-center gap-2 mb-6">
-            {editingId ? <Edit3 size={20} /> : <Plus size={20} />}
-            {editingId ? "แก้ไขข้อมูลอุปกรณ์" : "เพิ่มอุปกรณ์ใหม่เข้าระบบ"}
-          </h4>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="md:col-span-2 flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-text-muted ml-1">ชื่ออุปกรณ์</label>
-              <input
-                className="p-3 border border-border-main rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-bg-main/50"
-                value={equipName}
-                onChange={(e) => setEquipName(e.target.value)}
-                placeholder="เช่น ลูกบาสเกตบอล (Mikasa)"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-text-muted ml-1">จำนวนสต็อกทั้งหมด</label>
-              <input
-                type="number"
-                className="p-3 border border-border-main rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-bg-main/50 text-center font-bold"
-                value={equipStock}
-                onChange={(e) => setEquipStock(e.target.value)}
-              />
-            </div>
+        {/* 1. Form Section (Top Panel) */}
+        <section className={`border transition-all duration-300 rounded-[24px] shadow-sm overflow-hidden ${editingId ? 'bg-orange-50/30 border-orange-200' : 'bg-white border-gray-200'}`}>
+          <div className="p-1 px-6 bg-gray-50/80 border-b border-inherit flex items-center justify-between">
+             <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 py-2 flex items-center gap-2">
+                {editingId ? <Edit3 size={14} className="text-orange-500" /> : <Plus size={14} className="text-primary" />}
+                {editingId ? "Edit Mode: กำลังแก้ไขข้อมูล" : "Entry Mode: ลงทะเบียนอุปกรณ์ใหม่"}
+             </span>
           </div>
-
-          <div className="flex gap-3 mt-6">
-            <button
-              className="flex-1 py-3.5 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all shadow-lg shadow-primary/20 cursor-pointer disabled:opacity-50"
-              onClick={handleSave}
-              disabled={loading}
-            >
-              {editingId ? <Save size={18} /> : <Plus size={18} />}
-              {editingId ? "บันทึกการแก้ไข" : "เพิ่มเข้าคลังอุปกรณ์"}
-            </button>
-            {editingId && (
-              <button
-                className="px-6 py-3.5 bg-gray-100 text-text-muted rounded-xl font-bold hover:bg-gray-200 transition-all cursor-pointer flex items-center gap-2"
-                onClick={() => { setEditingId(null); setEquipName(""); setEquipStock("10"); }}
-              >
-                <X size={18} /> ยกเลิก
-              </button>
-            )}
+          <div className="p-6">
+            <div className="flex flex-col md:flex-row gap-6 items-end">
+              <div className="flex-[3] space-y-2 w-full">
+                <label className="text-xs font-bold text-gray-500 ml-1">ชื่อรายการอุปกรณ์</label>
+                <input
+                  className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
+                  value={equipName}
+                  onChange={(e) => setEquipName(e.target.value)}
+                  placeholder="ตัวอย่าง: ฟุตบอลหนังเบอร์ 5"
+                />
+              </div>
+              <div className="flex-1 space-y-2 w-full">
+                <label className="text-xs font-bold text-gray-500 ml-1">จำนวนสต็อก</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-center font-black text-primary"
+                  value={equipStock}
+                  onChange={(e) => setEquipStock(e.target.value)}
+                />
+              </div>
+              <div className="flex-[1.5] flex gap-2 w-full">
+                <button
+                  className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${
+                    editingId ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100' : 'bg-primary hover:bg-primary-dark text-white shadow-primary/10'
+                  }`}
+                  onClick={handleSave}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="animate-pulse">กำลังบันทึก...</span>
+                  ) : (
+                    <>
+                      {editingId ? <Save size={18} /> : <Plus size={18} />}
+                      {editingId ? "บันทึกการแก้ไข" : "เพิ่มอุปกรณ์"}
+                    </>
+                  )}
+                </button>
+                {editingId && (
+                  <button
+                    className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center"
+                    onClick={() => { setEditingId(null); setEquipName(""); setEquipStock("10"); }}
+                    title="ยกเลิกการแก้ไข"
+                  >
+                    <X size={20} />
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ตารางแสดงรายการ (Inventory List) */}
-        <section className="bg-surface border border-border-main rounded-2xl p-6 shadow-sm">
-          <h4 className="text-lg font-bold text-text-main flex items-center gap-2 mb-6">
-            <Boxes size={20} className="text-primary" /> รายการอุปกรณ์ในคลังปัจจุบัน
-          </h4>
+        {/* 2. Inventory Grid Section */}
+        <section className="bg-white border border-gray-200 rounded-[24px] shadow-sm overflow-hidden">
+          <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <ListFilter size={18} className="text-gray-400" />
+              <h4 className="font-bold text-gray-700">บัญชีรายชื่ออุปกรณ์</h4>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {items.length === 0 && (
-              <div className="col-span-full py-20 text-center text-text-muted italic bg-bg-main rounded-xl border border-dashed border-border-main">
-                ไม่มีอุปกรณ์ในระบบ
-              </div>
-            )}
-            {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex justify-between items-center p-4 bg-bg-main/30 border border-border-main rounded-xl hover:border-primary transition-all group animate-in zoom-in-95 duration-200"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-primary group-hover:text-white transition-colors">
-                    <Package size={24} />
+          <div className="p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.length === 0 && !loading && (
+                <div className="col-span-full py-20 text-center text-gray-400 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                  <Package size={40} className="mx-auto mb-2 opacity-20" />
+                  <p className="text-sm italic">ไม่มีอุปกรณ์ในระบบ</p>
+                </div>
+              )}
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col p-5 bg-white border border-gray-100 rounded-2xl hover:border-primary/40 hover:shadow-md transition-all group relative overflow-hidden"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 bg-gray-50 rounded-xl group-hover:bg-primary/5 transition-colors">
+                        <Package size={22} className="text-gray-400 group-hover:text-primary" />
+                      </div>
+                      <div>
+                        <strong className="block text-gray-800 font-bold leading-tight">{item.name}</strong>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Inventory ID: #{item.id}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <strong className="block text-text-main">{item.name}</strong>
-                    <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
-                      <span className="font-bold text-primary bg-primary-soft px-1.5 rounded">คงเหลือ: {item.stock}</span>
-                      <span>/</span>
-                      <span>ทั้งหมด: {item.total}</span>
+
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <div className="flex gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Available</span>
+                        <span className="text-lg font-black text-primary leading-none">{item.stock}</span>
+                      </div>
+                      <div className="flex flex-col border-l border-gray-100 pl-4">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</span>
+                        <span className="text-lg font-black text-gray-400 leading-none">{item.total}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1">
+                      <button
+                        className="p-2 text-gray-400 hover:text-primary hover:bg-primary-soft/40 rounded-lg transition-all"
+                        onClick={() => {
+                          setEditingId(item.id);
+                          setEquipName(item.name);
+                          setEquipStock(item.total.toString());
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        onClick={() => deleteItem(item.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <button
-                    className="p-2.5 bg-white text-text-muted rounded-lg border border-border-main hover:text-primary hover:border-primary hover:shadow-sm transition-all cursor-pointer"
-                    onClick={() => {
-                      setEditingId(item.id);
-                      setEquipName(item.name);
-                      setEquipStock(item.total.toString());
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    title="แก้ไข"
-                  >
-                    <Edit3 size={16} />
-                  </button>
-                  <button
-                    className="p-2.5 bg-white text-red-400 rounded-lg border border-border-main hover:text-red-600 hover:border-red-200 hover:bg-red-50 transition-all cursor-pointer"
-                    onClick={() => deleteItem(item.id)}
-                    title="ลบ"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </section>
       </div>
