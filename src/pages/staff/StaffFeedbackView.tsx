@@ -6,7 +6,10 @@ import {
   Maximize2,
   X,
   Filter,
-  Inbox
+  Inbox,
+  Image as ImageIcon,
+  ChevronRight,
+  ClipboardCheck
 } from "lucide-react";
 
 interface FeedbackItem {
@@ -18,7 +21,7 @@ interface FeedbackItem {
 }
 
 const FACILITY_NAMES: Record<string, string> = {
-  all: "ทั้งหมด",
+  all: "ทุกสนาม",
   outdoor: "สนามกลางแจ้ง",
   badminton: "สนามแบดมินตัน",
   track: "สนามลู่-ลาน",
@@ -57,29 +60,31 @@ export default function StaffFeedbackView() {
     : feedbacks.filter(item => item.facility === filter);
 
   return (
-    <div className="min-h-screen bg-bg-main font-kanit p-4 md:p-8 animate-in fade-in duration-500">
-      <div className="max-w-[1200px] mx-auto space-y-8">
+    <div className="min-h-screen bg-[#f8fafc] font-kanit p-6 md:p-10 animate-in fade-in duration-700">
+      <div className="max-w-[1200px] mx-auto space-y-6">
 
-        {/* Header & Filter Section */}
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-surface p-6 rounded-3xl border border-border-main shadow-sm">
-          <div>
-            <h1 className="text-2xl font-extrabold text-text-main flex items-center gap-2">
-              <MessageSquare className="text-primary" />
-              ความคิดเห็นและหลักฐานการใช้งาน
+        {/* 1. Official Header */}
+        <header className="flex flex-col md:flex-row justify-between items-end border-b border-slate-200 pb-8 gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+              <ClipboardCheck className="text-primary" size={28} />
+              บันทึกข้อร้องเรียนและรายงานการใช้งาน
             </h1>
-            <p className="text-text-muted text-sm">ตรวจสอบปัญหาและรูปภาพใบลงทะเบียนจากผู้ใช้</p>
+            <p className="text-slate-500 text-sm font-medium">ส่วนตรวจสอบหลักฐานภาพถ่ายและความคิดเห็นจากผู้ใช้บริการ</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-bg-main p-1.5 rounded-2xl border border-border-main w-full md:w-auto overflow-x-auto">
-            <Filter size={16} className="ml-2 text-text-muted shrink-0" />
+          <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+            <div className="px-3 text-slate-400 border-r border-slate-100">
+              <Filter size={14} />
+            </div>
             {Object.entries(FACILITY_NAMES).map(([key, name]) => (
               <button
                 key={key}
                 onClick={() => setFilter(key)}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   filter === key
-                    ? "bg-primary text-white shadow-md"
-                    : "text-text-muted hover:text-text-main hover:bg-white"
+                    ? "bg-primary text-white shadow-md shadow-primary/20"
+                    : "text-slate-500 hover:text-primary hover:bg-slate-50"
                 }`}
               >
                 {name}
@@ -88,83 +93,95 @@ export default function StaffFeedbackView() {
           </div>
         </header>
 
-        {/* Content Grid */}
+        {/* 2. List Content - ปรับเป็น List View กึ่ง Table ให้ดูทางการ */}
         {loading ? (
-          <div className="text-center py-20 font-bold text-text-muted">กำลังโหลดข้อมูล...</div>
+          <div className="text-center py-24 text-slate-400 font-bold animate-pulse">กำลังเรียกข้อมูลเอกสาร...</div>
         ) : filteredData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 bg-surface rounded-[40px] border-2 border-dashed border-border-main">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-4">
-              <Inbox size={40} />
-            </div>
-            <h3 className="text-xl font-bold text-text-muted">ไม่พบข้อมูลฟีดแบ็ก</h3>
-            <p className="text-sm text-gray-400">ยังไม่มีการส่งฟีดแบ็กในหมวดหมู่นี้</p>
+          <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-200 shadow-sm">
+            <Inbox size={48} className="text-slate-200 mb-4" />
+            <h3 className="text-lg font-bold text-slate-400">ไม่พบรายการบันทึก</h3>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredData.map((item) => (
-              <article
-                key={item.id}
-                className="group bg-surface rounded-3xl border border-border-main shadow-sm hover:shadow-xl hover:border-primary/30 transition-all overflow-hidden flex flex-col"
-              >
-                {/* Image Preview Area */}
-                <div className="relative aspect-video bg-gray-100 overflow-hidden">
-                  <img
-                    src={item.image_url || "https://via.placeholder.com/400x225?text=No+Image"}
-                    alt="Proof"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <button
-                    onClick={() => setSelectedImage(item.image_url)}
-                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                  >
-                    <div className="bg-white/20 backdrop-blur-md p-3 rounded-full text-white border border-white/30">
-                      <Maximize2 size={24} />
-                    </div>
-                  </button>
-                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-primary shadow-sm">
-                    ID: #{item.id}
-                  </div>
-                </div>
-
-                {/* Info Area */}
-                <div className="p-6 space-y-4 flex-1 flex flex-col text-sm text-text-main">
-                  <div className="flex justify-between items-start gap-2">
-                    <div className="flex items-center gap-1.5 font-bold text-primary">
-                      <MapPin size={14} />
-                      {FACILITY_NAMES[item.facility] || item.facility}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-text-muted text-[11px] font-medium">
-                      <Calendar size={12} />
-                      {new Date(item.created_at).toLocaleDateString("th-TH", { day: '2-digit', month: 'short', year: '2-digit' })}
-                    </div>
-                  </div>
-
-                  <div className="bg-bg-main p-4 rounded-2xl border border-border-main flex-1">
-                    <p className="italic leading-relaxed">
-                      {item.problems || "— ไม่มีรายละเอียดเพิ่มเติม —"}
-                    </p>
-                  </div>
-                </div>
-              </article>
-            ))}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 text-[11px] uppercase tracking-widest text-slate-500 font-black border-b border-slate-200">
+                    <th className="px-6 py-4 w-24">ID</th>
+                    <th className="px-6 py-4 w-48">วันที่รายงาน</th>
+                    <th className="px-6 py-4 w-48">สถานที่/สนาม</th>
+                    <th className="px-6 py-4">รายละเอียดปัญหา</th>
+                    <th className="px-6 py-4 text-center w-32">ภาพหลักฐาน</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredData.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                      <td className="px-6 py-5 font-mono text-xs text-slate-400">#{item.id}</td>
+                      <td className="px-6 py-5">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-700">
+                            {new Date(item.created_at).toLocaleDateString("th-TH", { day: '2-digit', month: 'long', year: 'numeric' })}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            เวลา {new Date(item.created_at).toLocaleTimeString("th-TH", { hour: '2-digit', minute: '2-digit' })} น.
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-5">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                          <MapPin size={10} />
+                          {FACILITY_NAMES[item.facility] || item.facility}
+                        </span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <p className="text-sm text-slate-600 font-medium leading-relaxed max-w-md italic">
+                          "{item.problems || "ไม่ระบุรายละเอียด"}"
+                        </p>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() => setSelectedImage(item.image_url)}
+                            className="relative w-16 h-12 rounded-lg border border-slate-200 overflow-hidden shadow-sm hover:ring-2 hover:ring-primary/30 transition-all cursor-pointer"
+                          >
+                            <img src={item.image_url} alt="Proof" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white">
+                              <Maximize2 size={12} />
+                            </div>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="bg-slate-50 px-6 py-3 border-t border-slate-200">
+               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                  End of Report — Total {filteredData.length} records
+               </p>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Fullscreen Image Modal */}
+      {/* Modal - ปรับพื้นหลังให้ดูหรูขึ้น */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[2000] flex items-center justify-center p-4 md:p-10 animate-in zoom-in-95 duration-300"
+          className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-300"
           onClick={() => setSelectedImage(null)}
         >
-          <button className="absolute top-6 right-6 text-white bg-white/10 p-3 rounded-full hover:bg-white/20 transition-colors">
-            <X size={32} />
-          </button>
-          <img
-            src={selectedImage}
-            alt="Full proof"
-            className="max-w-full max-h-full rounded-2xl shadow-2xl border-2 border-white/10"
-          />
+          <div className="relative max-w-4xl w-full flex flex-col items-center">
+            <button className="absolute -top-12 right-0 text-white flex items-center gap-2 font-bold text-sm hover:opacity-70 transition-opacity">
+              <X size={24} /> ปิดหน้าต่าง
+            </button>
+            <img
+              src={selectedImage}
+              alt="Full proof"
+              className="max-w-full max-h-[80vh] rounded-xl shadow-2xl border border-white/20 object-contain"
+            />
+          </div>
         </div>
       )}
     </div>

@@ -1,185 +1,115 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-  CategoryScale,
-  LinearScale,
-} from "chart.js";
-import { Doughnut } from "react-chartjs-2";
-import { Calendar, Download, Package, TrendingUp } from "lucide-react";
+  Printer,
+  FileText,
+  FileSpreadsheet,
+  Search,
+  Filter,
+  Download,
+  Calendar,
+  BarChart3,
+  History
+} from "lucide-react";
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale);
-
-export default function StaffBorrowStats() {
-  const [dateFrom, setDateFrom] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0]
-  );
-  const [dateTo, setDateTo] = useState(
-    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split("T")[0]
-  );
-  const [rows, setRows] = useState<{ equipment: string; qty: number }[]>([]);
-  const [total, setTotal] = useState(0);
-
-  const loadData = async () => {
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev";
-      const res = await fetch(`${API_BASE}/api/staff/borrow-records/stats?from=${dateFrom}&to=${dateTo}&action=borrow`);
-      const data = await res.json();
-      if (data?.ok) {
-        setRows(data.rows || []);
-        setTotal(data.total || 0);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [dateFrom, dateTo]);
-
-  const handleDownloadExcel = () => {
-    if (rows.length === 0) {
-      alert("ไม่มีข้อมูลสำหรับการดาวน์โหลด");
-      return;
-    }
-    const header = ["ลำดับ", "รายการอุปกรณ์", "จำนวนครั้งที่ยืม"];
-    const csvContent = [
-      header.join(","),
-      ...rows.map((r, i) => `${i + 1},${r.equipment},${r.qty}`),
-      `,รวมทั้งสิ้น,${total}`,
-    ].join("\n");
-
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `equipment_report_${dateFrom}_to_${dateTo}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const chartData = {
-    labels: rows.length > 0 ? rows.map((r) => r.equipment) : ["No Data"],
-    datasets: [
-      {
-        data: rows.length > 0 ? rows.map((r) => r.qty) : [1],
-        backgroundColor: rows.length > 0
-          ? ["#818cf8", "#6366f1", "#4f46e5", "#4338ca", "#3730a3", "#312e81"]
-          : ["#f1f5f9"],
-        hoverOffset: 20,
-        borderWidth: 0,
-      },
-    ],
-  };
+export default function StaffDocumentManagement() {
+  const [activeTab, setActiveTab] = useState("usage-report");
 
   return (
-    <div className="min-h-screen bg-bg-main font-kanit p-4 md:p-10 animate-in fade-in duration-500">
-      <div className="max-w-[1000px] mx-auto bg-surface p-6 md:p-10 rounded-[32px] shadow-sm border border-border-main">
+    <div className="min-h-screen bg-[#f3f4f6] font-kanit p-4 md:p-8 animate-in fade-in duration-500">
+      <div className="max-w-[1400px] mx-auto space-y-4">
 
-        {/* Header Section */}
-        <header className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
-          <div className="flex items-center gap-3 bg-primary-soft text-primary px-4 py-1.5 rounded-full text-sm font-bold">
-            <Package size={16} />
-            <span>Equipment Insights</span>
+        {/* 1. Navigation Tabs (เลียนแบบแถบเมนูในรูป) */}
+        <div className="flex border-b border-gray-200">
+          <button
+            className={`px-6 py-3 text-sm font-bold transition-all border-b-2 ${activeTab === 'usage-report' ? 'border-primary text-primary bg-white rounded-t-xl' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setActiveTab('usage-report')}
+          >
+            ออกเอกสารรายงานสรุปผล
+          </button>
+        </div>
+
+        {/* 2. Search & Filter Area */}
+        <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+          <div className="flex flex-wrap items-center gap-4">
+             <div className="flex items-center gap-2 text-sm font-bold text-gray-600 border-r pr-4 border-gray-200">
+                <Filter size={16} /> ตัวกรองข้อมูล
+             </div>
+             <div className="flex items-center gap-3">
+                <label className="text-xs font-bold text-gray-400">เลือกช่วงเวลา:</label>
+                <input type="month" className="p-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20" />
+             </div>
+          </div>
+        </section>
+
+        {/* 3. Document Table Area */}
+        <section className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h3 className="font-bold text-gray-700 flex items-center gap-2">
+              <History size={18} className="text-primary" /> รายการเอกสารรายงานประจำเดือน
+            </h3>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <div className="flex items-center bg-bg-main px-4 py-2 rounded-xl border border-border-main text-text-muted">
-              <Calendar size={14} />
-              <input
-                type="date"
-                className="bg-transparent border-none outline-none text-xs md:text-sm font-bold text-text-main mx-2"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-              <span className="text-xs px-1">to</span>
-              <input
-                type="date"
-                className="bg-transparent border-none outline-none text-xs md:text-sm font-bold text-text-main mx-2"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-
-            <button
-              onClick={handleDownloadExcel}
-              className="w-10 h-10 rounded-full border border-border-main bg-surface flex items-center justify-center text-text-main hover:bg-text-main hover:text-white transition-all cursor-pointer shadow-sm active:scale-95"
-              title="Download Report"
-            >
-              <Download size={18} />
-            </button>
-          </div>
-        </header>
-
-        <main className="grid grid-cols-1 lg:grid-cols-5 gap-12 items-start">
-
-          {/* Chart Section (3/5 columns) */}
-          <section className="lg:col-span-3 space-y-8">
-            <div className="relative h-[320px] w-full flex items-center justify-center">
-              <Doughnut
-                data={chartData}
-                options={{
-                  maintainAspectRatio: false,
-                  cutout: "82%",
-                  plugins: { legend: { display: false } },
-                }}
-              />
-              <div className="absolute text-center">
-                <span className="block text-5xl md:text-6xl font-extrabold tracking-tighter text-text-main leading-none">
-                  {total.toLocaleString()}
-                </span>
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-[2px]">Total Borrows</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              {rows.map((r, i) => (
-                <div key={i} className="flex items-center gap-2 text-xs md:text-sm">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: chartData.datasets[0].backgroundColor[i] as string }}
-                  />
-                  <span className="text-text-muted truncate flex-1">{r.equipment}</span>
-                  <span className="font-bold text-text-main">{r.qty}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Table Section (2/5 columns) */}
-          <section className="lg:col-span-2 space-y-6">
-            <div className="flex items-center gap-2 text-text-main font-bold border-b border-border-main pb-4">
-              <TrendingUp size={18} className="text-primary" />
-              <h3>Detailed Report</h3>
-            </div>
-
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-text-muted border-b border-border-main">
-                  <th className="pb-4 text-left font-bold">Equipment</th>
-                  <th className="pb-4 text-right font-bold">Usage</th>
+                <tr className="bg-white text-gray-600 border-b border-gray-200 uppercase tracking-tighter">
+                  <th className="px-4 py-4 font-bold text-center border-r border-gray-100 w-16">ลำดับ</th>
+                  <th className="px-4 py-4 font-bold text-left border-r border-gray-100">รหัสเอกสาร</th>
+                  <th className="px-4 py-4 font-bold text-left border-r border-gray-100">รอบเดือน/ปี</th>
+                  <th className="px-4 py-4 font-bold text-left border-r border-gray-100">ชื่อรายงาน (ดึงข้อมูลอัตโนมัติ)</th>
+                  <th className="px-4 py-4 font-bold text-left border-r border-gray-100">แหล่งข้อมูล</th>
+                  <th className="px-4 py-4 font-bold text-center border-r border-gray-100">ความครบถ้วน</th>
+                  <th className="px-4 py-4 font-bold text-center">พิมพ์รายงาน (PDF/Excel)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border-main">
-                {rows.map((r, i) => (
-                  <tr key={i} className="group hover:bg-bg-main/50 transition-colors">
-                    <td className="py-4 text-text-main font-medium">{r.equipment}</td>
-                    <td className="py-4 text-right font-bold text-primary">{r.qty.toLocaleString()}</td>
+              <tbody className="divide-y divide-gray-100">
+                {[
+                  { id: 1, code: "REP-FAC-6901", period: "มกราคม 2569", title: "สรุปสถิติจำนวนผู้เข้าใช้สนามกีฬาทุกประเภท", source: "บันทึกเข้าสนาม", completion: "100%" },
+                  { id: 2, code: "REP-EQP-6901", period: "มกราคม 2569", title: "รายงานการยืม-คืนอุปกรณ์กีฬาและวัสดุคงคลัง", source: "บันทึกยืม-คืน", completion: "100%" },
+                  { id: 3, code: "REP-FAC-6812", period: "ธันวาคม 2568", title: "สรุปยอดผู้เข้าใช้สนามประจำเดือน (ย้อนหลัง)", source: "บันทึกเข้าสนาม", completion: "100%" },
+                ].map((row) => (
+                  <tr key={row.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="px-4 py-5 text-center text-gray-400 border-r border-gray-50">{row.id}</td>
+                    <td className="px-4 py-5 font-mono text-xs text-gray-500 border-r border-gray-50">{row.code}</td>
+                    <td className="px-4 py-5 font-bold text-gray-700 border-r border-gray-50">{row.period}</td>
+                    <td className="px-4 py-5 font-bold text-primary border-r border-gray-50">{row.title}</td>
+                    <td className="px-4 py-5 border-r border-gray-50">
+                       <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                          {row.source === "บันทึกเข้าสนาม" ? <BarChart3 size={14}/> : <History size={14}/>}
+                          {row.source}
+                       </span>
+                    </td>
+                    <td className="px-4 py-5 text-center border-r border-gray-50">
+                       <span className="text-[10px] font-black bg-green-100 text-green-600 px-2 py-1 rounded">
+                          พร้อมออกเอกสาร
+                       </span>
+                    </td>
+                    <td className="px-4 py-5 text-center">
+                      <div className="flex justify-center gap-3">
+                        {/* ปุ่มเลียนแบบไอคอนในรูปภาพ */}
+                        <button className="text-blue-600 hover:scale-110 transition-all" title="ดาวน์โหลด PDF Report">
+                          <Printer size={20} />
+                        </button>
+                        <button className="text-green-600 hover:scale-110 transition-all" title="ดาวน์โหลด Excel Data">
+                          <FileSpreadsheet size={20} />
+                        </button>
+                        <button className="text-orange-500 hover:scale-110 transition-all" title="ดูข้อมูลใน Google Sheets">
+                           <Download size={20} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
 
-            <div className="mt-8 bg-gradient-to-r from-primary to-indigo-400 p-6 rounded-2xl text-white flex justify-between items-center shadow-lg shadow-primary/20 animate-in slide-in-from-bottom-2">
-              <span className="text-sm font-medium opacity-90">สรุปยอดรวมทั้งสิ้น</span>
-              <strong className="text-2xl font-extrabold">{total.toLocaleString()} <small className="text-xs font-normal">รายการ</small></strong>
-            </div>
-          </section>
-        </main>
+          {/* Bottom Summary Info */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 text-[10px] text-gray-400 font-black uppercase tracking-widest text-right">
+             Report Generator System v1.0 | UP-FMS Admin Aleekae
+          </div>
+        </section>
       </div>
     </div>
   );

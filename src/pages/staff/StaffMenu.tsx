@@ -44,7 +44,7 @@ export default function StaffMenu() {
       icon: <ClipboardList size={40} />
     },
     {
-      title: "อ่านฟีดแบ็กนิสิต",
+      title: "บันทึกรายงานการใช้งาน",
       subtitle: "Student Feedback",
       path: "/staff/feedback",
       icon: <MessageSquare size={40} />
