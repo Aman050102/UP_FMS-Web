@@ -26,10 +26,10 @@ export default function StaffMenu() {
       icon: <FileText size={40} />
     },
     {
-      title: "สถิติการยืม-คืน",
+      title: "จัดการเอกสาร",
       subtitle: "Loan Statistics",
       path: "/staff/borrow-stats",
-      icon: <PieChart size={40} />
+      icon: <ClipboardList size={40} />
     },
     {
       title: "จัดการอุปกรณ์กีฬา",
@@ -41,7 +41,7 @@ export default function StaffMenu() {
       title: "บันทึกการยืม-คืน",
       subtitle: "Loan Ledger",
       path: "/staff/borrow-ledger",
-      icon: <ClipboardList size={40} />
+      icon: <PieChart size={40} />
     },
     {
       title: "บันทึกรายงานการใช้งาน",
