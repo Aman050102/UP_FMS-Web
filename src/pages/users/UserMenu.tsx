@@ -18,10 +18,10 @@ export default function UserMenu() {
   ];
 
   return (
-    // .app-layout: ล็อกความสูงและซ่อน scroll หลัก
+
     <div className="flex flex-col h-screen overflow-hidden">
 
-      {/* .content-area: ส่วนเลื่อนเนื้อหา */}
+
       <main className="flex-1 mt-header overflow-y-auto px-6 py-10 flex flex-col items-center custom-scrollbar">
 
         {/* .container-fixed: คุมความกว้าง */}
