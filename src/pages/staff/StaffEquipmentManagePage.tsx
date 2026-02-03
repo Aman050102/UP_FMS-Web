@@ -1,5 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { Package, Plus, Trash2, Edit3, X, Save, Boxes, LayoutGrid, ListFilter } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Trash2,
+  Edit3,
+  X,
+  Save,
+  Boxes,
+  LayoutGrid,
+  ListFilter,
+} from "lucide-react";
 
 // กำหนด URL ของ API จาก Environment หรือค่า Default
 const API = (
@@ -16,23 +26,23 @@ export default function StaffEquipmentManagePage() {
 
   // ดึงรายการอุปกรณ์ทั้งหมดจากระบบ
   const fetchList = async () => {
-  try {
-    // ตรวจสอบว่า API URL ของคุณไม่มี / ปิดท้าย และเรียกไปที่ /stock
-    const res = await fetch(`${API}/api/staff/equipment/stock`);
+    try {
+      // ตรวจสอบว่า API URL ของคุณไม่มี / ปิดท้าย และเรียกไปที่ /stock
+      const res = await fetch(`${API}/api/staff/equipment/stock`);
 
-    // ตรวจสอบสถานะก่อนแปลงเป็น JSON
-    if (!res.ok) {
+      // ตรวจสอบสถานะก่อนแปลงเป็น JSON
+      if (!res.ok) {
         const errorText = await res.text();
         console.error("Server Error:", errorText);
         return;
-    }
+      }
 
-    const data = await res.json();
-    if (data.ok) setItems(data.equipments);
-  } catch (e) {
-    console.error("Fetch failed:", e);
-  }
-};
+      const data = await res.json();
+      if (data.ok) setItems(data.equipments);
+    } catch (e) {
+      console.error("Fetch failed:", e);
+    }
+  };
 
   useEffect(() => {
     fetchList();
@@ -82,7 +92,7 @@ export default function StaffEquipmentManagePage() {
     if (!confirm("ยืนยันการลบอุปกรณ์นี้ออกจากระบบ?")) return;
     try {
       const res = await fetch(`${API}/api/staff/equipment/${id}/`, {
-        method: "DELETE"
+        method: "DELETE",
       });
       if (res.ok) {
         fetchList();
@@ -96,7 +106,6 @@ export default function StaffEquipmentManagePage() {
 
   return (
     <div className="max-w-[1200px] mx-auto p-6 font-kanit animate-in fade-in duration-700">
-
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div className="flex items-center gap-3">
@@ -104,30 +113,46 @@ export default function StaffEquipmentManagePage() {
             <LayoutGrid size={28} className="text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">จัดการคลังอุปกรณ์กีฬา</h1>
-            <p className="text-gray-500 text-xs">ระบบควบคุมและติดตามรายการอุปกรณ์ส่วนกลาง</p>
+            <h1 className="text-2xl font-bold text-gray-800">
+              จัดการคลังอุปกรณ์กีฬา
+            </h1>
+            <p className="text-gray-500 text-xs">
+              ระบบควบคุมและติดตามรายการอุปกรณ์ส่วนกลาง
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-gray-200 shadow-sm">
-           <Boxes size={18} className="text-gray-400" />
-           <span className="text-sm font-bold text-gray-600">อุปกรณ์ทั้งหมด: <span className="text-primary">{items.length}</span> รายการ</span>
+          <Boxes size={18} className="text-gray-400" />
+          <span className="text-sm font-bold text-gray-600">
+            อุปกรณ์ทั้งหมด: <span className="text-primary">{items.length}</span>{" "}
+            รายการ
+          </span>
         </div>
       </div>
 
       <div className="space-y-6">
-
         {/* 1. Form Section (Top Panel) */}
-        <section className={`border transition-all duration-300 rounded-[24px] shadow-sm overflow-hidden ${editingId ? 'bg-orange-50/30 border-orange-200' : 'bg-white border-gray-200'}`}>
+        <section
+          className={`border transition-all duration-300 rounded-[24px] shadow-sm overflow-hidden ${editingId ? "bg-orange-50/30 border-orange-200" : "bg-white border-gray-200"}`}
+        >
           <div className="p-1 px-6 bg-gray-50/80 border-b border-inherit flex items-center justify-between">
-             <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 py-2 flex items-center gap-2">
-                {editingId ? <Edit3 size={14} className="text-orange-500" /> : <Plus size={14} className="text-primary" />}
-                {editingId ? "Edit Mode: กำลังแก้ไขข้อมูล" : "Entry Mode: ลงทะเบียนอุปกรณ์ใหม่"}
-             </span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-gray-400 py-2 flex items-center gap-2">
+              {editingId ? (
+                <Edit3 size={14} className="text-orange-500" />
+              ) : (
+                <Plus size={14} className="text-primary" />
+              )}
+              {editingId
+                ? "Edit Mode: กำลังแก้ไขข้อมูล"
+                : "Entry Mode: ลงทะเบียนอุปกรณ์ใหม่"}
+            </span>
           </div>
           <div className="p-6">
             <div className="flex flex-col md:flex-row gap-6 items-end">
               <div className="flex-[3] space-y-2 w-full">
-                <label className="text-xs font-bold text-gray-500 ml-1">ชื่อรายการอุปกรณ์</label>
+                <label className="text-xs font-bold text-gray-500 ml-1">
+                  ชื่อรายการอุปกรณ์
+                </label>
                 <input
                   className="w-full p-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
                   value={equipName}
@@ -136,7 +161,9 @@ export default function StaffEquipmentManagePage() {
                 />
               </div>
               <div className="flex-1 space-y-2 w-full">
-                <label className="text-xs font-bold text-gray-500 ml-1">จำนวนสต็อก</label>
+                <label className="text-xs font-bold text-gray-500 ml-1">
+                  จำนวนสต็อก
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -148,7 +175,9 @@ export default function StaffEquipmentManagePage() {
               <div className="flex-[1.5] flex gap-2 w-full">
                 <button
                   className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${
-                    editingId ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100' : 'bg-primary hover:bg-primary-dark text-white shadow-primary/10'
+                    editingId
+                      ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
+                      : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
                   }`}
                   onClick={handleSave}
                   disabled={loading}
@@ -165,7 +194,11 @@ export default function StaffEquipmentManagePage() {
                 {editingId && (
                   <button
                     className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-bold hover:bg-gray-200 transition-all flex items-center justify-center"
-                    onClick={() => { setEditingId(null); setEquipName(""); setEquipStock("10"); }}
+                    onClick={() => {
+                      setEditingId(null);
+                      setEquipName("");
+                      setEquipStock("10");
+                    }}
                     title="ยกเลิกการแก้ไข"
                   >
                     <X size={20} />
@@ -201,11 +234,18 @@ export default function StaffEquipmentManagePage() {
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-gray-50 rounded-xl group-hover:bg-primary/5 transition-colors">
-                        <Package size={22} className="text-gray-400 group-hover:text-primary" />
+                        <Package
+                          size={22}
+                          className="text-gray-400 group-hover:text-primary"
+                        />
                       </div>
                       <div>
-                        <strong className="block text-gray-800 font-bold leading-tight">{item.name}</strong>
-                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Inventory ID: #{item.id}</span>
+                        <strong className="block text-gray-800 font-bold leading-tight">
+                          {item.name}
+                        </strong>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">
+                          Inventory ID: #{item.id}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -213,12 +253,20 @@ export default function StaffEquipmentManagePage() {
                   <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
                     <div className="flex gap-4">
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Available</span>
-                        <span className="text-lg font-black text-primary leading-none">{item.stock}</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                          Available
+                        </span>
+                        <span className="text-lg font-black text-primary leading-none">
+                          {item.stock}
+                        </span>
                       </div>
                       <div className="flex flex-col border-l border-gray-100 pl-4">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Total</span>
-                        <span className="text-lg font-black text-gray-400 leading-none">{item.total}</span>
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                          Total
+                        </span>
+                        <span className="text-lg font-black text-gray-400 leading-none">
+                          {item.total}
+                        </span>
                       </div>
                     </div>
 
@@ -229,7 +277,7 @@ export default function StaffEquipmentManagePage() {
                           setEditingId(item.id);
                           setEquipName(item.name);
                           setEquipStock(item.total.toString());
-                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                          window.scrollTo({ top: 0, behavior: "smooth" });
                         }}
                       >
                         <Edit3 size={16} />

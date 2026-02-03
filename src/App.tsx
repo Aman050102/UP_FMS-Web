@@ -10,7 +10,7 @@ import StaffBorrowLedgerPage from "./pages/staff/StaffBorrowLedgerPage";
 import StaffBorrowStats from "./pages/staff/StaffBorrowStats";
 import CheckinReportPage from "./pages/staff/CheckinReportPage";
 import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
-import StaffBookingManage from "./pages/staff/StaffBookingManage"; 
+import StaffBookingManage from "./pages/staff/StaffBookingManage";
 
 // User Pages
 import UserMenu from "./pages/users/UserMenu";
@@ -37,10 +37,17 @@ export default function App() {
         <Route path="/staff/menu" element={<StaffMenu />} />
         <Route path="/staff/dashboard" element={<CheckinReportPage />} />
         <Route path="/staff/equipment" element={<StaffEquipmentManagePage />} />
-        <Route path="/staff/borrow-ledger" element={<StaffBorrowLedgerPage />} />
+        <Route
+          path="/staff/borrow-ledger"
+          element={<StaffBorrowLedgerPage />}
+        />
         <Route path="/staff/borrow-stats" element={<StaffBorrowStats />} />
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
-        <Route path="/staff/booking-manage" element={<StaffBookingManage />} /> {/* จัดการการจองและพิมพ์ PDF */}
+        <Route
+          path="/staff/booking-manage"
+          element={<StaffBookingManage />}
+        />{" "}
+        {/* จัดการการจองและพิมพ์ PDF */}
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />

@@ -60,7 +60,6 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-4 md:p-8 font-kanit animate-in fade-in duration-500">
       <div className="w-full max-w-[720px] bg-white rounded-[28px] p-8 md:p-10 shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
-
         {/* Logo & Header - แก้ไขให้ใช้ตัวแปร dsaLogo */}
         <div className="flex justify-center mb-4">
           <img
@@ -71,15 +70,23 @@ export default function Register() {
         </div>
 
         <div className="text-center space-y-1 mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">สร้างบัญชีผู้ใช้งานใหม่</h1>
-          <p className="text-sm text-[#8b86a4]">UP - Field Management System (UP-FMS)</p>
-          <p className="text-sm text-[#8b86a4]">สมัครสมาชิกเพื่อเข้าใช้งานระบบ</p>
+          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">
+            สร้างบัญชีผู้ใช้งานใหม่
+          </h1>
+          <p className="text-sm text-[#8b86a4]">
+            UP - Field Management System (UP-FMS)
+          </p>
+          <p className="text-sm text-[#8b86a4]">
+            สมัครสมาชิกเพื่อเข้าใช้งานระบบ
+          </p>
         </div>
 
         <form className="space-y-5" onSubmit={submit} noValidate>
           {/* Row 1: Full Name */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-bold text-[#2b2346] ml-1">ชื่อ-นามสกุล / Full Name</label>
+            <label className="text-sm font-bold text-[#2b2346] ml-1">
+              ชื่อ-นามสกุล / Full Name
+            </label>
             <input
               className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
               value={fullName}
@@ -92,7 +99,9 @@ export default function Register() {
           {/* Row 2: Email & Username */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[#2b2346] ml-1">อีเมล / E-mail</label>
+              <label className="text-sm font-bold text-[#2b2346] ml-1">
+                อีเมล / E-mail
+              </label>
               <input
                 type="email"
                 className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
@@ -103,7 +112,9 @@ export default function Register() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[#2b2346] ml-1">ชื่อผู้ใช้ / Username</label>
+              <label className="text-sm font-bold text-[#2b2346] ml-1">
+                ชื่อผู้ใช้ / Username
+              </label>
               <input
                 className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base placeholder:text-gray-300"
                 value={username}
@@ -117,7 +128,9 @@ export default function Register() {
           {/* Row 3: Passwords */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5 relative">
-              <label className="text-sm font-bold text-[#2b2346] ml-1">รหัสผ่าน / Password</label>
+              <label className="text-sm font-bold text-[#2b2346] ml-1">
+                รหัสผ่าน / Password
+              </label>
               <div className="relative flex items-center">
                 <input
                   type={showPw ? "text" : "password"}
@@ -136,7 +149,9 @@ export default function Register() {
               </div>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-bold text-[#2b2346] ml-1">ยืนยันรหัสผ่าน / Confirm Password</label>
+              <label className="text-sm font-bold text-[#2b2346] ml-1">
+                ยืนยันรหัสผ่าน / Confirm Password
+              </label>
               <input
                 type="password"
                 className="w-full py-2 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-sm md:text-base"
@@ -148,8 +163,16 @@ export default function Register() {
           </div>
 
           {/* Status Messages */}
-          {error && <p className="text-sm text-[#e11d48] font-medium animate-pulse">{error}</p>}
-          {ok && <p className="text-sm text-[#16a34a] font-medium bg-green-50 p-3 rounded-lg border border-green-100">{ok}</p>}
+          {error && (
+            <p className="text-sm text-[#e11d48] font-medium animate-pulse">
+              {error}
+            </p>
+          )}
+          {ok && (
+            <p className="text-sm text-[#16a34a] font-medium bg-green-50 p-3 rounded-lg border border-green-100">
+              {ok}
+            </p>
+          )}
 
           {/* Action Buttons */}
           <div className="pt-2 space-y-4">

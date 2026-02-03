@@ -85,7 +85,6 @@ export default function CheckinFeedback() {
     <div className="min-h-screen bg-bg-main font-kanit p-4 md:p-8 animate-in fade-in duration-500">
       <main className="max-w-[800px] mx-auto">
         <section className="bg-surface rounded-3xl border border-border-main shadow-sm overflow-hidden">
-
           {/* Form Header */}
           <div className="bg-primary/5 p-8 border-b border-border-main text-center">
             <h1 className="text-2xl md:text-3xl font-extrabold text-text-main mb-2">
@@ -101,7 +100,7 @@ export default function CheckinFeedback() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-bg-main rounded-2xl border border-border-main">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-text-muted flex items-center gap-2">
-                   สถานที่ที่ใช้งาน
+                  สถานที่ที่ใช้งาน
                 </label>
                 <select
                   className="w-full p-3 bg-white border border-border-main rounded-xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all cursor-pointer"
@@ -116,7 +115,9 @@ export default function CheckinFeedback() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-bold text-text-muted">วันที่ดำเนินการ</label>
+                <label className="text-sm font-bold text-text-muted">
+                  วันที่ดำเนินการ
+                </label>
                 <div className="p-3 bg-white border border-border-main rounded-xl text-primary font-bold">
                   {todayStr}
                 </div>
@@ -124,7 +125,6 @@ export default function CheckinFeedback() {
             </div>
 
             <form className="space-y-8" onSubmit={onSubmit}>
-
               {/* Image Upload Section */}
               <div className="space-y-3">
                 <label className="text-sm font-extrabold text-text-main flex items-center gap-2">
@@ -134,14 +134,23 @@ export default function CheckinFeedback() {
 
                 {!imagePreview ? (
                   <label className="group block w-full aspect-video md:aspect-[21/9] border-2 border-dashed border-border-main rounded-2xl hover:border-primary hover:bg-primary-soft/30 transition-all cursor-pointer overflow-hidden">
-                    <input type="file" accept="image/*" onChange={handleImageChange} hidden />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      hidden
+                    />
                     <div className="h-full flex flex-col items-center justify-center gap-4 p-6">
                       <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center group-hover:scale-110 group-hover:bg-primary-soft group-hover:text-primary transition-all">
                         <Camera size={32} />
                       </div>
                       <div className="text-center">
-                        <span className="block text-text-main font-bold">คลิกเพื่อถ่ายรูปหรือเลือกรูปภาพ</span>
-                        <span className="text-xs text-text-muted">รองรับไฟล์ภาพ JPG, PNG (ไม่เกิน 1MB)</span>
+                        <span className="block text-text-main font-bold">
+                          คลิกเพื่อถ่ายรูปหรือเลือกรูปภาพ
+                        </span>
+                        <span className="text-xs text-text-muted">
+                          รองรับไฟล์ภาพ JPG, PNG (ไม่เกิน 1MB)
+                        </span>
                       </div>
                     </div>
                   </label>
@@ -166,7 +175,7 @@ export default function CheckinFeedback() {
               {/* Suggestions Section */}
               <div className="space-y-3">
                 <label className="text-sm font-extrabold text-text-main flex items-center gap-2">
-                   ปัญหาที่พบหรือข้อเสนอแนะเพิ่มเติม
+                  ปัญหาที่พบหรือข้อเสนอแนะเพิ่มเติม
                 </label>
                 <textarea
                   className="w-full min-h-[150px] p-4 bg-white border border-border-main rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-gray-300 resize-none"

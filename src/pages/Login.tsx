@@ -35,14 +35,17 @@ export default function Login() {
 
       if (!res.ok) {
         if (res.status === 403 && data.status === "pending") {
-          throw new Error("บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติและมอบสิทธิ์เข้าใช้งาน");
+          throw new Error(
+            "บัญชีของคุณอยู่ระหว่างรอแอดมินอนุมัติและมอบสิทธิ์เข้าใช้งาน",
+          );
         }
         throw new Error(data.error || "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
       }
 
       localStorage.setItem("display_name", data.full_name || data.username);
       localStorage.setItem("user_role", data.role);
-      window.location.href = data.role === "staff" ? "/staff/menu" : "/user/menu";
+      window.location.href =
+        data.role === "staff" ? "/staff/menu" : "/user/menu";
     } catch (err: any) {
       setError(err?.message || "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
     } finally {
@@ -53,7 +56,6 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-6 font-kanit animate-in fade-in duration-500">
       <div className="w-full max-w-[500px] bg-white rounded-[28px] p-10 md:p-12 text-center shadow-[0_24px_60px_rgba(0,0,0,0.25)]">
-
         {/* Logo Section - แก้ไข src มาใช้ตัวแปร dsaLogo */}
         <div className="mb-6">
           <img
@@ -64,15 +66,23 @@ export default function Login() {
         </div>
 
         <div className="space-y-1 mb-8">
-          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">ระบบจัดการข้อมูลสนามกีฬา</h1>
-          <h2 className="text-lg font-bold text-[#2b2346]">กองกิจการนิสิต มหาวิทยาลัยพะเยา</h2>
-          <p className="text-sm text-[#756f8a] mt-2">UP-FMS | Field Management System</p>
+          <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">
+            ระบบจัดการข้อมูลสนามกีฬา
+          </h1>
+          <h2 className="text-lg font-bold text-[#2b2346]">
+            กองกิจการนิสิต มหาวิทยาลัยพะเยา
+          </h2>
+          <p className="text-sm text-[#756f8a] mt-2">
+            UP-FMS | Field Management System
+          </p>
         </div>
 
         <form className="space-y-6 text-left" onSubmit={onSubmit}>
           {/* Username Field */}
           <div className="space-y-1.5">
-            <label className="text-sm font-bold text-[#2b2346] ml-1">Username / ชื่อผู้ใช้</label>
+            <label className="text-sm font-bold text-[#2b2346] ml-1">
+              Username / ชื่อผู้ใช้
+            </label>
             <input
               type="text"
               className="w-full py-3 bg-transparent border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] transition-all text-lg"
@@ -84,7 +94,9 @@ export default function Login() {
 
           {/* Password Field */}
           <div className="space-y-1.5 relative">
-            <label className="text-sm font-bold text-[#2b2346] ml-1">Password / รหัสผ่าน</label>
+            <label className="text-sm font-bold text-[#2b2346] ml-1">
+              Password / รหัสผ่าน
+            </label>
             <div className="relative">
               <input
                 type={showPw ? "text" : "password"}
@@ -103,7 +115,11 @@ export default function Login() {
             </div>
           </div>
 
-          {error && <p className="text-red-500 text-sm font-medium animate-pulse">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-sm font-medium animate-pulse">
+              {error}
+            </p>
+          )}
 
           {/* Login Button */}
           <button

@@ -12,31 +12,44 @@ export default function UserMenu() {
   }, []);
 
   const menuItems = [
-    { title: "บันทึกการเข้าใช้สนาม", subtitle: "Sports Facility Usage Log", path: "/checkin", icon: <CheckCircle2 size={40} /> },
-    { title: "ยืม-คืนอุปกรณ์", subtitle: "Equipment Loan Record", path: "/equipment", icon: <Trophy size={40} /> },
-    { title: "แบบฟอร์มแสดงความคิดเห็น", subtitle: "Feedback Form", path: "/checkin_feedback", icon: <MessageSquareText size={40} /> }
+    {
+      title: "บันทึกการเข้าใช้สนาม",
+      subtitle: "Sports Facility Usage Log",
+      path: "/checkin",
+      icon: <CheckCircle2 size={40} />,
+    },
+    {
+      title: "ยืม-คืนอุปกรณ์",
+      subtitle: "Equipment Loan Record",
+      path: "/equipment",
+      icon: <Trophy size={40} />,
+    },
+    {
+      title: "แบบฟอร์มแสดงความคิดเห็น",
+      subtitle: "Feedback Form",
+      path: "/checkin_feedback",
+      icon: <MessageSquareText size={40} />,
+    },
   ];
 
   return (
-
     <div className="flex flex-col h-screen overflow-hidden">
-
-
       <main className="flex-1 mt-header overflow-y-auto px-6 py-10 flex flex-col items-center custom-scrollbar">
-
         {/* .container-fixed: คุมความกว้าง */}
         <div className="w-full max-w-[1100px] mx-auto">
-
           {/* .menu-header */}
           <header className="text-center mb-12">
-            <h1 className="text-[2rem] font-bold text-text-main mb-2 leading-tight">ระบบจัดการสนามกีฬา</h1>
-            <p className="text-[1.1rem] text-text-muted font-light">ยินดีต้อนรับคุณ {displayName}</p>
+            <h1 className="text-[2rem] font-bold text-text-main mb-2 leading-tight">
+              ระบบจัดการสนามกีฬา
+            </h1>
+            <p className="text-[1.1rem] text-text-muted font-light">
+              ยินดีต้อนรับคุณ {displayName}
+            </p>
           </header>
 
           {/* .menu-grid: ใช้ Grid แบบ Auto-fit */}
           <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] gap-6 w-full">
             {menuItems.map((item, index) => (
-
               // .menu-tile
               <div
                 key={index}
@@ -48,7 +61,9 @@ export default function UserMenu() {
                   {item.icon}
                 </div>
 
-                <b className="text-lg text-text-main group-hover:text-primary transition-colors">{item.title}</b>
+                <b className="text-lg text-text-main group-hover:text-primary transition-colors">
+                  {item.title}
+                </b>
                 <p className="text-sm text-text-muted mt-1">{item.subtitle}</p>
               </div>
             ))}

@@ -44,7 +44,7 @@ const UP_FACULTIES = [
 
 export default function EquipmentPage() {
   const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">(
-    "borrow"
+    "borrow",
   );
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -130,7 +130,7 @@ export default function EquipmentPage() {
     sid: string,
     faculty: string,
     itemName: string,
-    qty: number
+    qty: number,
   ) => {
     const res = await fetch(`${API}/api/equipment/return/`, {
       method: "POST",
@@ -172,8 +172,8 @@ export default function EquipmentPage() {
       else
         setBorrowItems(
           borrowItems.map((i) =>
-            i.name === itemName ? { ...i, qty: newQty } : i
-          )
+            i.name === itemName ? { ...i, qty: newQty } : i,
+          ),
         );
     } else if (delta > 0) {
       if ((stockItem?.stock || 0) <= 0) return alert("สินค้าหมด");
@@ -198,8 +198,8 @@ export default function EquipmentPage() {
             {tab === "borrow"
               ? "ยืมอุปกรณ์"
               : tab === "return"
-              ? "คืนอุปกรณ์"
-              : "ประวัติการยืม-คืน"}
+                ? "คืนอุปกรณ์"
+                : "ประวัติการยืม-คืน"}
           </button>
         ))}
       </nav>
@@ -216,49 +216,73 @@ export default function EquipmentPage() {
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">ชื่อ-นามสกุล</label>
+                    <label className="text-xs font-bold text-text-muted">
+                      ชื่อ-นามสกุล
+                    </label>
                     <input
                       type="text"
                       placeholder="ชื่อ-นามสกุล"
                       className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       value={studentInfo.name}
-                      onChange={(e) => setStudentInfo({ ...studentInfo, name: e.target.value })}
+                      onChange={(e) =>
+                        setStudentInfo({ ...studentInfo, name: e.target.value })
+                      }
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">รหัสนิสิต / รหัสนักเรียน</label>
+                    <label className="text-xs font-bold text-text-muted">
+                      รหัสนิสิต / รหัสนักเรียน
+                    </label>
                     <input
                       type="text"
                       placeholder="ระบุรหัสประจำตัว"
                       className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       value={studentInfo.id}
-                      onChange={(e) => setStudentInfo({ ...studentInfo, id: e.target.value })}
+                      onChange={(e) =>
+                        setStudentInfo({ ...studentInfo, id: e.target.value })
+                      }
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">คณะ / หน่วยงาน</label>
+                    <label className="text-xs font-bold text-text-muted">
+                      คณะ / หน่วยงาน
+                    </label>
                     <select
                       className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white"
                       value={studentInfo.faculty}
-                      onChange={(e) => setStudentInfo({ ...studentInfo, faculty: e.target.value })}
+                      onChange={(e) =>
+                        setStudentInfo({
+                          ...studentInfo,
+                          faculty: e.target.value,
+                        })
+                      }
                     >
                       <option value="">เลือกคณะ / หน่วยงาน</option>
                       {UP_FACULTIES.map((f) => (
-                        <option key={f} value={f}>{f}</option>
+                        <option key={f} value={f}>
+                          {f}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">เบอร์โทรศัพท์</label>
+                    <label className="text-xs font-bold text-text-muted">
+                      เบอร์โทรศัพท์
+                    </label>
                     <input
                       type="text"
                       placeholder="เบอร์โทรศัพท์ 10 หลัก"
                       maxLength={10}
                       className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                       value={studentInfo.phone}
-                      onChange={(e) => setStudentInfo({ ...studentInfo, phone: e.target.value })}
+                      onChange={(e) =>
+                        setStudentInfo({
+                          ...studentInfo,
+                          phone: e.target.value,
+                        })
+                      }
                     />
                   </div>
                 </div>
@@ -272,12 +296,19 @@ export default function EquipmentPage() {
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {stocks.map((item) => (
-                  <div key={item.name} className="flex justify-between items-center p-3 bg-bg-main border border-border-main rounded-xl">
+                  <div
+                    key={item.name}
+                    className="flex justify-between items-center p-3 bg-bg-main border border-border-main rounded-xl"
+                  >
                     <div className="flex items-center gap-3">
                       {getSportIcon(item.name)}
                       <div className="overflow-hidden">
-                        <strong className="block text-sm truncate w-full">{item.name}</strong>
-                        <small className="text-text-muted text-xs">คงเหลือ {item.stock}</small>
+                        <strong className="block text-sm truncate w-full">
+                          {item.name}
+                        </strong>
+                        <small className="text-text-muted text-xs">
+                          คงเหลือ {item.stock}
+                        </small>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 bg-white p-1 px-2 rounded-full border border-border-main shadow-sm">
@@ -288,7 +319,8 @@ export default function EquipmentPage() {
                         <Minus size={14} />
                       </button>
                       <span className="font-extrabold min-w-[20px] text-center text-sm">
-                        {borrowItems.find((i) => i.name === item.name)?.qty || 0}
+                        {borrowItems.find((i) => i.name === item.name)?.qty ||
+                          0}
                       </span>
                       <button
                         className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer"
@@ -305,17 +337,26 @@ export default function EquipmentPage() {
             {/* Summary Section */}
             {borrowItems.length > 0 && (
               <section className="bg-primary-soft/30 border-t-4 border-primary rounded-xl p-5 animate-in slide-in-from-bottom duration-300">
-                <h4 className="text-text-main font-bold mb-3">รายการที่เลือกยืม</h4>
+                <h4 className="text-text-main font-bold mb-3">
+                  รายการที่เลือกยืม
+                </h4>
                 <div className="space-y-2 mb-4">
                   {borrowItems.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center py-2 border-b border-dashed border-primary/20"
+                    >
                       <div className="flex items-center gap-2">
                         {getSportIcon(item.name)}
-                        <span className="text-sm font-medium">{item.name} x {item.qty} รายการ</span>
+                        <span className="text-sm font-medium">
+                          {item.name} x {item.qty} รายการ
+                        </span>
                       </div>
                       <button
                         className="text-red-500 p-1 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        onClick={() => handleUpdateBorrowQty(item.name, -item.qty)}
+                        onClick={() =>
+                          handleUpdateBorrowQty(item.name, -item.qty)
+                        }
                       >
                         <Trash2 size={16} />
                       </button>
@@ -350,13 +391,21 @@ export default function EquipmentPage() {
               >
                 <div
                   className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
-                  onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}
+                  onClick={() =>
+                    setExpandedId(expandedId === user.id ? null : user.id)
+                  }
                 >
                   <div className="flex items-center gap-4">
                     <strong className="text-primary text-lg">{user.id}</strong>
-                    <span className="text-sm text-text-muted hidden sm:inline">{user.faculty}</span>
+                    <span className="text-sm text-text-muted hidden sm:inline">
+                      {user.faculty}
+                    </span>
                   </div>
-                  {expandedId === user.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                  {expandedId === user.id ? (
+                    <ChevronUp size={20} />
+                  ) : (
+                    <ChevronDown size={20} />
+                  )}
                 </div>
 
                 {expandedId === user.id && (
@@ -372,20 +421,43 @@ export default function EquipmentPage() {
                         </thead>
                         <tbody className="divide-y divide-border-main">
                           {user.items.map((item: any, i: number) => (
-                            <tr key={i} className="flex flex-col md:table-row bg-white md:bg-transparent mb-3 md:mb-0">
-                              <td className="p-3 flex justify-between md:table-cell" data-label="รายการ">
+                            <tr
+                              key={i}
+                              className="flex flex-col md:table-row bg-white md:bg-transparent mb-3 md:mb-0"
+                            >
+                              <td
+                                className="p-3 flex justify-between md:table-cell"
+                                data-label="รายการ"
+                              >
                                 <div className="flex items-center gap-2 md:justify-start">
                                   {getSportIcon(item.equipment)}
-                                  <span className="font-medium">{item.equipment}</span>
+                                  <span className="font-medium">
+                                    {item.equipment}
+                                  </span>
                                 </div>
                               </td>
-                              <td className="p-3 flex justify-between md:table-cell text-center" data-label="ค้างคืน">
-                                <span className="text-red-500 font-bold">{item.remaining}</span>
+                              <td
+                                className="p-3 flex justify-between md:table-cell text-center"
+                                data-label="ค้างคืน"
+                              >
+                                <span className="text-red-500 font-bold">
+                                  {item.remaining}
+                                </span>
                               </td>
-                              <td className="p-3 flex justify-between md:table-cell text-center" data-label="จัดการ">
+                              <td
+                                className="p-3 flex justify-between md:table-cell text-center"
+                                data-label="จัดการ"
+                              >
                                 <button
                                   className="w-full md:w-auto bg-primary text-white px-4 py-1.5 rounded-lg font-bold hover:bg-primary-dark transition-colors cursor-pointer text-xs"
-                                  onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}
+                                  onClick={() =>
+                                    handleReturnItem(
+                                      user.id,
+                                      user.faculty,
+                                      item.equipment,
+                                      item.remaining,
+                                    )
+                                  }
                                 >
                                   ยืนยันคืน
                                 </button>
@@ -421,29 +493,55 @@ export default function EquipmentPage() {
                 </thead>
                 <tbody className="divide-y divide-border-main">
                   {borrowHistory.map((h: any, i: number) => (
-                    <tr key={i} className="flex flex-col md:table-row bg-white md:bg-transparent hover:bg-primary-soft/10 transition-colors">
-                      <td className="p-4 text-center flex justify-between md:table-cell" data-label="เวลา">
+                    <tr
+                      key={i}
+                      className="flex flex-col md:table-row bg-white md:bg-transparent hover:bg-primary-soft/10 transition-colors"
+                    >
+                      <td
+                        className="p-4 text-center flex justify-between md:table-cell"
+                        data-label="เวลา"
+                      >
                         <span className="text-text-muted">{h.time}</span>
                       </td>
-                      <td className="p-4 flex justify-between md:table-cell" data-label="ผู้ยืม">
+                      <td
+                        className="p-4 flex justify-between md:table-cell"
+                        data-label="ผู้ยืม"
+                      >
                         <div className="text-right md:text-left">
-                          <strong className="block text-text-main">{h.student_id}</strong>
+                          <strong className="block text-text-main">
+                            {h.student_id}
+                          </strong>
                           <small className="text-text-muted">{h.faculty}</small>
                         </div>
                       </td>
-                      <td className="p-4 text-center flex justify-between md:table-cell" data-label="รายการ">
+                      <td
+                        className="p-4 text-center flex justify-between md:table-cell"
+                        data-label="รายการ"
+                      >
                         <span className="font-medium">{h.equipment}</span>
                       </td>
-                      <td className="p-4 text-center flex justify-between md:table-cell font-bold" data-label="จำนวน">
+                      <td
+                        className="p-4 text-center flex justify-between md:table-cell font-bold"
+                        data-label="จำนวน"
+                      >
                         {h.qty} ชิ้น
                       </td>
-                      <td className="p-4 flex justify-between md:table-cell" data-label="สถานะ">
+                      <td
+                        className="p-4 flex justify-between md:table-cell"
+                        data-label="สถานะ"
+                      >
                         <div className="flex justify-center w-full">
-                          <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                            h.action === "return" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
-                          }`}>
+                          <span
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                              h.action === "return"
+                                ? "bg-green-100 text-green-600"
+                                : "bg-orange-100 text-orange-600"
+                            }`}
+                          >
                             {h.action === "return" ? (
-                              <><CheckCircle2 size={14} /> คืนแล้ว</>
+                              <>
+                                <CheckCircle2 size={14} /> คืนแล้ว
+                              </>
                             ) : (
                               "🟠 กำลังยืม"
                             )}

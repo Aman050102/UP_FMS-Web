@@ -18,22 +18,36 @@ import {
   Clock,
   CheckCircle2,
   TrendingUp,
-  Filter
+  Filter,
 } from "lucide-react";
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+);
 
-const API = (import.meta.env.VITE_API_BASE_URL || "https://up-fms-api-hono.aman02012548.workers.dev").replace(/\/$/, "");
+const API = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://up-fms-api-hono.aman02012548.workers.dev"
+).replace(/\/$/, "");
 
 export default function StaffBorrowReportPage() {
   // States สำหรับ Filter
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
   });
   const [dateTo, setDateTo] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
   });
   const [studentSearch, setStudentSearch] = useState("");
   const [viewMode, setViewMode] = useState<"pie" | "bar">("pie");
@@ -49,12 +63,16 @@ export default function StaffBorrowReportPage() {
     setLoading(true);
     try {
       // 1. ดึงข้อมูลสถิติ (Stats)
-      const statsRes = await fetch(`${API}/api/staff/borrow-records/stats?from=${dateFrom}&to=${dateTo}&action=borrow`);
+      const statsRes = await fetch(
+        `${API}/api/staff/borrow-records/stats?from=${dateFrom}&to=${dateTo}&action=borrow`,
+      );
       const statsData = await statsRes.json();
 
       // 2. ดึงข้อมูลบันทึกทั้งหมด (Ledger) ในช่วงวันที่เลือก
       // หมายเหตุ: ปรับ API ให้รองรับช่วงวันที่ หรือดึงข้อมูลมา Filter เอง
-      const ledgerRes = await fetch(`${API}/api/staff/borrow-records/?date=${dateTo}`); // ตัวอย่างดึงวันล่าสุด
+      const ledgerRes = await fetch(
+        `${API}/api/staff/borrow-records/?date=${dateTo}`,
+      ); // ตัวอย่างดึงวันล่าสุด
       const ledgerData = await ledgerRes.json();
 
       if (statsData.ok) {
@@ -79,40 +97,61 @@ export default function StaffBorrowReportPage() {
 
   // กรองข้อมูลในตารางตามรหัสนิสิต
   const filteredRecords = useMemo(() => {
-    return records.filter(r => r.student_id.includes(studentSearch));
+    return records.filter((r) => r.student_id.includes(studentSearch));
   }, [records, studentSearch]);
 
-  const chartData = useMemo(() => ({
-    labels: stats.map(s => s.equipment),
-    datasets: [{
-      label: 'จำนวนครั้งที่ยืม',
-      data: stats.map(s => s.qty),
-      backgroundColor: ["#5D4B9C", "#C8A44D", "#2e7d32", "#1565c0", "#ef6c00", "#701a75"],
-      borderColor: "#ffffff",
-      borderWidth: 2,
-    }]
-  }), [stats]);
+  const chartData = useMemo(
+    () => ({
+      labels: stats.map((s) => s.equipment),
+      datasets: [
+        {
+          label: "จำนวนครั้งที่ยืม",
+          data: stats.map((s) => s.qty),
+          backgroundColor: [
+            "#5D4B9C",
+            "#C8A44D",
+            "#2e7d32",
+            "#1565c0",
+            "#ef6c00",
+            "#701a75",
+          ],
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    }),
+    [stats],
+  );
 
   return (
     <main className="min-h-screen bg-bg-main font-kanit p-4 md:p-8 space-y-6">
-
       {/* 1. Toolbar & Filters (แบบเดียวกับหน้าเข้าสนาม) */}
       <section className="bg-surface rounded-3xl border border-border-main p-6 shadow-sm no-print">
         <div className="flex flex-wrap gap-6 items-end">
           <div className="space-y-2">
             <label className="text-xs font-bold text-text-muted flex items-center gap-1">
-              <Calendar size={14}/> ช่วงวันที่วิเคราะห์
+              <Calendar size={14} /> ช่วงวันที่วิเคราะห์
             </label>
             <div className="flex items-center gap-2">
-              <input type="date" className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <input
+                type="date"
+                className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
               <span className="text-text-muted">-</span>
-              <input type="date" className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              <input
+                type="date"
+                className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="flex-1 min-w-[200px] space-y-2">
             <label className="text-xs font-bold text-text-muted flex items-center gap-1">
-              <Search size={14}/> ค้นหารหัสนิสิตในตาราง
+              <Search size={14} /> ค้นหารหัสนิสิตในตาราง
             </label>
             <input
               type="text"
@@ -127,7 +166,13 @@ export default function StaffBorrowReportPage() {
             className="flex items-center gap-2 px-6 py-2.5 bg-text-main text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all cursor-pointer shadow-lg active:scale-95"
             onClick={fetchData}
           >
-            {loading ? "กำลังโหลด..." : <><Filter size={18}/> อัปเดตข้อมูล</>}
+            {loading ? (
+              "กำลังโหลด..."
+            ) : (
+              <>
+                <Filter size={18} /> อัปเดตข้อมูล
+              </>
+            )}
           </button>
         </div>
       </section>
@@ -148,23 +193,39 @@ export default function StaffBorrowReportPage() {
                 </button>
               ))}
             </div>
-            <button className="flex items-center gap-2 px-5 py-2.5 border border-border-main rounded-xl font-bold text-sm hover:bg-bg-main transition-all" onClick={() => window.print()}>
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 border border-border-main rounded-xl font-bold text-sm hover:bg-bg-main transition-all"
+              onClick={() => window.print()}
+            >
               <Printer size={18} /> พิมพ์รายงาน
             </button>
           </div>
 
           <div className="w-full max-w-[400px] aspect-square relative flex items-center justify-center">
-             {viewMode === "pie" ? (
-               <>
-                <Doughnut data={chartData} options={{ cutout: "75%", plugins: { legend: { position: 'bottom' } } }} />
+            {viewMode === "pie" ? (
+              <>
+                <Doughnut
+                  data={chartData}
+                  options={{
+                    cutout: "75%",
+                    plugins: { legend: { position: "bottom" } },
+                  }}
+                />
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-10">
-                  <span className="text-5xl font-black text-text-main leading-none">{totalBorrow.toLocaleString()}</span>
-                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-2">Total Borrows</span>
+                  <span className="text-5xl font-black text-text-main leading-none">
+                    {totalBorrow.toLocaleString()}
+                  </span>
+                  <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-2">
+                    Total Borrows
+                  </span>
                 </div>
-               </>
-             ) : (
-               <Bar data={chartData} options={{ plugins: { legend: { display: false } } }} />
-             )}
+              </>
+            ) : (
+              <Bar
+                data={chartData}
+                options={{ plugins: { legend: { display: false } } }}
+              />
+            )}
           </div>
         </section>
 
@@ -172,23 +233,40 @@ export default function StaffBorrowReportPage() {
         <div className="space-y-6">
           <section className="bg-gradient-to-br from-[#5D4B9C] to-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-primary/20">
             <Package size={32} className="mb-4 opacity-50" />
-            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">ยืมอุปกรณ์รวมทั้งหมด</span>
-            <div className="text-6xl font-black mt-2 leading-none">{totalBorrow.toLocaleString()}</div>
-            <p className="mt-4 text-xs opacity-70 font-medium leading-relaxed">ข้อมูลสรุปการยืมอุปกรณ์กีฬา <br/>ในช่วงเวลาที่ท่านกำหนด</p>
+            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">
+              ยืมอุปกรณ์รวมทั้งหมด
+            </span>
+            <div className="text-6xl font-black mt-2 leading-none">
+              {totalBorrow.toLocaleString()}
+            </div>
+            <p className="mt-4 text-xs opacity-70 font-medium leading-relaxed">
+              ข้อมูลสรุปการยืมอุปกรณ์กีฬา <br />
+              ในช่วงเวลาที่ท่านกำหนด
+            </p>
           </section>
 
           <section className="bg-surface rounded-3xl border border-border-main p-6 shadow-sm">
             <h4 className="font-bold text-text-main mb-4 flex items-center gap-2">
-              <TrendingUp size={18} className="text-primary"/> อันดับอุปกรณ์ยอดนิยม
+              <TrendingUp size={18} className="text-primary" />{" "}
+              อันดับอุปกรณ์ยอดนิยม
             </h4>
             <div className="space-y-3">
               {stats.slice(0, 5).map((s, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-bg-main/50 border border-border-main/50">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-bg-main/50 border border-border-main/50"
+                >
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-lg bg-white border border-border-main flex items-center justify-center text-[10px] font-black">{i+1}</span>
-                    <span className="text-sm font-bold text-text-main">{s.equipment}</span>
+                    <span className="w-6 h-6 rounded-lg bg-white border border-border-main flex items-center justify-center text-[10px] font-black">
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-bold text-text-main">
+                      {s.equipment}
+                    </span>
                   </div>
-                  <span className="text-sm font-black text-primary">{s.qty} ครั้ง</span>
+                  <span className="text-sm font-black text-primary">
+                    {s.qty} ครั้ง
+                  </span>
                 </div>
               ))}
             </div>
@@ -200,7 +278,8 @@ export default function StaffBorrowReportPage() {
       <section className="bg-surface rounded-[32px] border border-border-main shadow-sm overflow-hidden">
         <div className="bg-bg-main px-6 py-4 border-b border-border-main flex justify-between items-center">
           <h3 className="font-bold text-text-main flex items-center gap-2">
-            <Clock size={18} className="text-primary"/> บันทึกรายการยืม-คืนอุปกรณ์ดิบ
+            <Clock size={18} className="text-primary" />{" "}
+            บันทึกรายการยืม-คืนอุปกรณ์ดิบ
           </h3>
           <span className="text-xs font-bold text-primary bg-primary-soft px-3 py-1 rounded-full">
             {filteredRecords.length} รายการพบในระบบ
@@ -221,7 +300,10 @@ export default function StaffBorrowReportPage() {
             <tbody className="divide-y divide-border-main">
               {filteredRecords.length > 0 ? (
                 filteredRecords.map((r, i) => (
-                  <tr key={i} className="hover:bg-bg-main/50 transition-colors group">
+                  <tr
+                    key={i}
+                    className="hover:bg-bg-main/50 transition-colors group"
+                  >
                     <td className="p-4 text-text-muted font-medium italic">
                       {r.time || "-"}
                     </td>
@@ -234,28 +316,45 @@ export default function StaffBorrowReportPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                          <Package size={14}/>
+                          <Package size={14} />
                         </div>
-                        <span className="font-medium text-text-main">{r.equipment}</span>
+                        <span className="font-medium text-text-main">
+                          {r.equipment}
+                        </span>
                       </div>
                     </td>
                     <td className="p-4 text-center">
                       <div className="flex justify-center">
-                        <span className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                          r.action === "return" ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
-                        }`}>
-                          {r.action === "return" ? <><CheckCircle2 size={12}/> คืนแล้ว</> : "กำลังยืม"}
+                        <span
+                          className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                            r.action === "return"
+                              ? "bg-green-100 text-green-600"
+                              : "bg-orange-100 text-orange-600"
+                          }`}
+                        >
+                          {r.action === "return" ? (
+                            <>
+                              <CheckCircle2 size={12} /> คืนแล้ว
+                            </>
+                          ) : (
+                            "กำลังยืม"
+                          )}
                         </span>
                       </div>
                     </td>
                     <td className="p-4 text-right font-black text-primary">
-                      {r.qty} <small className="text-[10px] text-text-muted font-normal ml-1">ชิ้น</small>
+                      {r.qty}{" "}
+                      <small className="text-[10px] text-text-muted font-normal ml-1">
+                        ชิ้น
+                      </small>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="p-10 text-center text-text-muted">ไม่พบข้อมูลตามเงื่อนไขที่เลือก</td>
+                  <td colSpan={5} className="p-10 text-center text-text-muted">
+                    ไม่พบข้อมูลตามเงื่อนไขที่เลือก
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -279,6 +378,6 @@ export default function StaffBorrowReportPage() {
 }
 
 // Sub-component สำหรับ Icon (ถ้าไม่ได้ import จาก lucide-react)
-function User({ size, className }: { size: number, className?: string }) {
+function User({ size, className }: { size: number; className?: string }) {
   return <Users size={size} className={className} />;
 }

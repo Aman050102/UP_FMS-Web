@@ -12,7 +12,14 @@ import {
   Filler,
 } from "chart.js";
 import { Pie, Bar, Line, Doughnut } from "react-chartjs-2";
-import { ChevronDown, Printer, Search, Calendar, MapPin, Users } from "lucide-react";
+import {
+  ChevronDown,
+  Printer,
+  Search,
+  Calendar,
+  MapPin,
+  Users,
+} from "lucide-react";
 
 // Register Chart.js
 ChartJS.register(
@@ -24,7 +31,7 @@ ChartJS.register(
   BarElement,
   PointElement,
   LineElement,
-  Filler
+  Filler,
 );
 
 interface CheckinRow {
@@ -53,11 +60,15 @@ export default function CheckinReportPage() {
 
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
   });
   const [dateTo, setDateTo] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
   });
   const [facilityFilter, setFacilityFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"pie" | "bar" | "line">("pie");
@@ -79,7 +90,7 @@ export default function CheckinReportPage() {
             ...r,
             student_count: Number(r.student_count || 0),
             staff_count: Number(r.staff_count || 0),
-          }))
+          })),
         );
       } catch (err) {
         console.error("Failed to fetch data", err);
@@ -92,7 +103,7 @@ export default function CheckinReportPage() {
     return rows.filter(
       (r) =>
         FAC_NAME[r.facility]?.includes(searchQuery) ||
-        r.sub_facility?.includes(searchQuery)
+        r.sub_facility?.includes(searchQuery),
     );
   }, [rows, searchQuery]);
 
@@ -115,7 +126,12 @@ export default function CheckinReportPage() {
           labels: Object.values(FAC_NAME),
           datasets: [
             {
-              data: [summary.outdoor, summary.badminton, summary.pool, summary.track],
+              data: [
+                summary.outdoor,
+                summary.badminton,
+                summary.pool,
+                summary.track,
+              ],
               backgroundColor: ["#2e7d32", "#1565c0", "#0f766e", "#ef6c00"],
               borderColor: "#ffffff",
               borderWidth: 2,
@@ -123,7 +139,10 @@ export default function CheckinReportPage() {
           ],
         };
       } else {
-        const studentSum = filteredRows.reduce((a, b) => a + b.student_count, 0);
+        const studentSum = filteredRows.reduce(
+          (a, b) => a + b.student_count,
+          0,
+        );
         const staffSum = filteredRows.reduce((a, b) => a + b.staff_count, 0);
         return {
           labels: ["นิสิต", "บุคลากร"],
@@ -148,20 +167,36 @@ export default function CheckinReportPage() {
         <div className="flex flex-wrap gap-6 items-end">
           <div className="space-y-2">
             <label className="text-xs font-bold text-text-muted flex items-center gap-1">
-              <Calendar size={14}/> ช่วงวันที่
+              <Calendar size={14} /> ช่วงวันที่
             </label>
             <div className="flex items-center gap-2">
-              <input type="date" className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <input
+                type="date"
+                className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
               <span className="text-text-muted">-</span>
-              <input type="date" className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              <input
+                type="date"
+                className="p-2.5 bg-bg-main border border-border-main rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
             </div>
           </div>
 
           <div className="flex-1 min-w-[200px] space-y-2">
             <label className="text-xs font-bold text-text-muted flex items-center gap-1">
-              <Search size={14}/> ค้นหาสนาม
+              <Search size={14} /> ค้นหาสนาม
             </label>
-            <input type="text" placeholder="ระบุชื่อสนามหรือสนามย่อย..." className="w-full p-2.5 bg-bg-main border border-border-main rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input
+              type="text"
+              placeholder="ระบุชื่อสนามหรือสนามย่อย..."
+              className="w-full p-2.5 bg-bg-main border border-border-main rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -169,7 +204,9 @@ export default function CheckinReportPage() {
               <button
                 key={key}
                 className={`px-4 py-2 rounded-full text-xs font-bold border-2 transition-all cursor-pointer ${
-                  facilityFilter === key ? "bg-primary text-white border-primary shadow-md" : "bg-white text-text-muted border-border-main hover:border-primary"
+                  facilityFilter === key
+                    ? "bg-primary text-white border-primary shadow-md"
+                    : "bg-white text-text-muted border-border-main hover:border-primary"
                 }`}
                 onClick={() => setFacilityFilter(key)}
               >
@@ -195,49 +232,86 @@ export default function CheckinReportPage() {
                 </button>
               ))}
             </div>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-text-main text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all cursor-pointer shadow-lg" onClick={() => window.print()}>
+            <button
+              className="flex items-center gap-2 px-5 py-2.5 bg-text-main text-white rounded-xl font-bold text-sm hover:opacity-90 transition-all cursor-pointer shadow-lg"
+              onClick={() => window.print()}
+            >
               <Printer size={18} /> พิมพ์รายงาน
             </button>
           </div>
 
           <div className="w-full max-w-[400px] aspect-square relative flex items-center justify-center">
-             {viewMode === "pie" && <Doughnut data={chartData} options={{ cutout: "70%", plugins: { legend: { position: 'bottom' } } }} />}
-             {viewMode === "bar" && <Bar data={chartData} />}
-             {viewMode === "line" && <Line data={chartData} />}
+            {viewMode === "pie" && (
+              <Doughnut
+                data={chartData}
+                options={{
+                  cutout: "70%",
+                  plugins: { legend: { position: "bottom" } },
+                }}
+              />
+            )}
+            {viewMode === "bar" && <Bar data={chartData} />}
+            {viewMode === "line" && <Line data={chartData} />}
 
-             {viewMode === "pie" && (
-               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-10">
-                 <span className="text-4xl font-black text-text-main leading-none">{summary.total.toLocaleString()}</span>
-                 <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">Total Users</span>
-               </div>
-             )}
+            {viewMode === "pie" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-10">
+                <span className="text-4xl font-black text-text-main leading-none">
+                  {summary.total.toLocaleString()}
+                </span>
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-1">
+                  Total Users
+                </span>
+              </div>
+            )}
           </div>
         </section>
 
         {/* Big Counter & Quick Stats */}
         <div className="space-y-6">
           <section className="bg-gradient-to-br from-primary to-indigo-600 rounded-3xl p-8 text-white shadow-xl shadow-primary/20">
-            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">ผู้เข้าใช้งานทั้งหมด</span>
-            <div className="text-6xl font-black mt-2 leading-none">{summary.total.toLocaleString()}</div>
-            <p className="mt-4 text-xs opacity-70 font-medium">ข้อมูลสรุปตามช่วงเวลาและเงื่อนไขที่เลือก</p>
+            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">
+              ผู้เข้าใช้งานทั้งหมด
+            </span>
+            <div className="text-6xl font-black mt-2 leading-none">
+              {summary.total.toLocaleString()}
+            </div>
+            <p className="mt-4 text-xs opacity-70 font-medium">
+              ข้อมูลสรุปตามช่วงเวลาและเงื่อนไขที่เลือก
+            </p>
           </section>
 
           <section className="bg-surface rounded-3xl border border-border-main p-6 shadow-sm grid grid-cols-2 gap-4">
             <div className="p-4 bg-green-50 rounded-2xl border border-green-100">
-              <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">กลางแจ้ง</span>
-              <div className="text-2xl font-black text-green-700">{summary.outdoor}</div>
+              <span className="text-[10px] font-bold text-green-600 uppercase tracking-wider">
+                กลางแจ้ง
+              </span>
+              <div className="text-2xl font-black text-green-700">
+                {summary.outdoor}
+              </div>
             </div>
             <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">แบดมินตัน</span>
-              <div className="text-2xl font-black text-blue-700">{summary.badminton}</div>
+              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                แบดมินตัน
+              </span>
+              <div className="text-2xl font-black text-blue-700">
+                {summary.badminton}
+              </div>
             </div>
             <div className="p-4 bg-teal-50 rounded-2xl border border-teal-100">
-              <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">สระว่ายน้ำ</span>
-              <div className="text-2xl font-black text-teal-700">{summary.pool}</div>
+              <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider">
+                สระว่ายน้ำ
+              </span>
+              <div className="text-2xl font-black text-teal-700">
+                {summary.pool}
+              </div>
             </div>
             <div className="p-4 bg-orange-50 rounded-2xl border border-orange-100">
-              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">ลู่-ลาน</span>
-              <div className="text-2xl font-black text-orange-700">{summary.track}</div>
+              <span className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">
+                ลู่-ลาน
+              </span>
+              <div className="text-2xl font-black text-orange-700">
+                {summary.track}
+              </div>
             </div>
           </section>
         </div>
@@ -247,7 +321,7 @@ export default function CheckinReportPage() {
       <section className="bg-surface rounded-3xl border border-border-main shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-500">
         <div className="bg-bg-main px-6 py-4 border-b border-border-main flex justify-between items-center">
           <h3 className="font-bold text-text-main flex items-center gap-2">
-            <Users size={18} className="text-primary"/> รายการผู้เข้าใช้สนาม
+            <Users size={18} className="text-primary" /> รายการผู้เข้าใช้สนาม
           </h3>
           <span className="text-xs font-bold text-primary bg-primary-soft px-3 py-1 rounded-full">
             {filteredRows.length} รายการ
@@ -269,15 +343,31 @@ export default function CheckinReportPage() {
             </thead>
             <tbody className="divide-y divide-border-main">
               {filteredRows.map((r, i) => (
-                <tr key={i} className="hover:bg-bg-main/50 transition-colors group">
+                <tr
+                  key={i}
+                  className="hover:bg-bg-main/50 transition-colors group"
+                >
                   <td className="p-4 text-text-muted">
-                    {new Date(r.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(r.ts).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </td>
-                  <td className="p-4 font-medium text-text-main">{r.session_date}</td>
-                  <td className="p-4 font-bold text-primary">{FAC_NAME[r.facility] || r.facility}</td>
-                  <td className="p-4 text-text-muted">{r.sub_facility || "-"}</td>
-                  <td className="p-4 text-center font-bold text-text-main">{r.student_count}</td>
-                  <td className="p-4 text-center font-bold text-text-main">{r.staff_count}</td>
+                  <td className="p-4 font-medium text-text-main">
+                    {r.session_date}
+                  </td>
+                  <td className="p-4 font-bold text-primary">
+                    {FAC_NAME[r.facility] || r.facility}
+                  </td>
+                  <td className="p-4 text-text-muted">
+                    {r.sub_facility || "-"}
+                  </td>
+                  <td className="p-4 text-center font-bold text-text-main">
+                    {r.student_count}
+                  </td>
+                  <td className="p-4 text-center font-bold text-text-main">
+                    {r.staff_count}
+                  </td>
                   <td className="p-4 text-right font-black text-primary group-hover:scale-105 transition-transform origin-right">
                     {r.student_count + r.staff_count}
                   </td>

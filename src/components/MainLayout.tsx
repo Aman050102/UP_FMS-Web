@@ -26,7 +26,10 @@ export default function MainLayout({ role }: MainLayoutProps) {
       <div className="flex flex-1 overflow-hidden mt-header">
         {/* เลือก Sidebar ตาม Role */}
         {role === "staff" ? (
-          <SidebarStaff open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+          <SidebarStaff
+            open={isMenuOpen}
+            onClose={() => setIsMenuOpen(false)}
+          />
         ) : (
           <SidebarUser open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         )}

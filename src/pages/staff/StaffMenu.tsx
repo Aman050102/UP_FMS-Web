@@ -6,7 +6,7 @@ import {
   Package,
   ClipboardList,
   MessageSquare,
-  CalendarCheck
+  CalendarCheck,
 } from "lucide-react";
 
 export default function StaffMenu() {
@@ -23,51 +23,52 @@ export default function StaffMenu() {
       title: "ข้อมูลการเข้าใช้สนาม",
       subtitle: "Usage Dashboard",
       path: "/staff/dashboard",
-      icon: <FileText size={40} />
+      icon: <FileText size={40} />,
     },
     {
       title: "จัดการเอกสาร",
       subtitle: "Document Management",
       path: "/staff/borrow-stats",
-      icon: <ClipboardList size={40} />
+      icon: <ClipboardList size={40} />,
     },
     {
       title: "จัดการอุปกรณ์กีฬา",
       subtitle: "Equipment Management",
       path: "/staff/equipment",
-      icon: <Package size={40} />
+      icon: <Package size={40} />,
     },
     {
       title: "บันทึกการยืม-คืน",
       subtitle: "Loan Ledger",
       path: "/staff/borrow-ledger",
-      icon: <PieChart size={40} />
+      icon: <PieChart size={40} />,
     },
     {
       title: "บันทึกรายงานการใช้งาน",
       subtitle: "Student Feedback",
       path: "/staff/feedback",
-      icon: <MessageSquare size={40} />
+      icon: <MessageSquare size={40} />,
     },
     {
       title: "จัดการการจองสนาม",
       subtitle: "Facility Booking",
       path: "/staff/booking-manage",
-      icon: <CalendarCheck size={40} />
-    }
+      icon: <CalendarCheck size={40} />,
+    },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-bg-main font-kanit">
       <main className="flex-1 mt-header px-6 py-10 flex flex-col items-center overflow-y-auto">
         <div className="w-full max-w-[1200px] mx-auto">
-
           <header className="text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
             <h1 className="text-[2.5rem] font-black text-text-main mb-2">
               ระบบจัดการสนามกีฬา
             </h1>
             <p className="text-[1.1rem] text-text-muted">
-              ยินดีต้อนรับคุณ <span className="text-primary font-bold">{displayName}</span> (Staff)
+              ยินดีต้อนรับคุณ{" "}
+              <span className="text-primary font-bold">{displayName}</span>{" "}
+              (Staff)
             </p>
           </header>
 
