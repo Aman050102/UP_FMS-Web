@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, CheckCircle2, Users, UserRound } from "lucide-react";
 
 const TOP = [

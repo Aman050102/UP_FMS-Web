@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, LogOut, X, Clock, Camera, User } from "lucide-react";
 import dsaLogo from "../assets/dsa.png";

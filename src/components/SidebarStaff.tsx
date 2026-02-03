@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   LayoutDashboard,
@@ -20,9 +20,9 @@ export default function SidebarStaff({
   onClose: () => void;
 }) {
   const location = useLocation();
+  const navigate = useNavigate(); // ใช้แค่บรรทัดนี้บรรทัดเดียว
   const displayName = localStorage.getItem("display_name") || "ผู้ดูแลระบบ";
 
-  // ฟังก์ชันกำหนดสไตล์ของลิงก์ที่กำลังใช้งาน (Active Link)
   const linkClass = (path: string) =>
     `flex items-center gap-3 px-6 py-4 transition-all duration-200 ${
       location.pathname === path
@@ -32,7 +32,6 @@ export default function SidebarStaff({
 
   return (
     <>
-      {/* Overlay สำหรับปิด Sidebar เมื่อคลิกด้านนอก */}
       {open && (
         <div
           className="fixed inset-0 bg-black/40 z-[1001] transition-opacity duration-300"
@@ -40,16 +39,15 @@ export default function SidebarStaff({
         />
       )}
 
-      {/* Sidebar Panel */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[280px] bg-surface z-[1002] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out transform ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full w-[280px] bg-surface z-[1002] flex flex-col shadow-2xl transition-transform duration-300 ease-in-out transform ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        {/* Logo Section */}
         <div className="h-header flex items-center px-8 border-b border-border-main justify-center bg-white">
           <img src={dsaLogo} alt="Logo" className="h-[60px] object-contain" />
         </div>
 
-        {/* Navigation Menu */}
         <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
           <Link
             to="/staff/menu"
@@ -58,7 +56,6 @@ export default function SidebarStaff({
           >
             <Home size={20} /> <span>หน้าแรก</span>
           </Link>
-
           <Link
             to="/staff/dashboard"
             className={linkClass("/staff/dashboard")}
@@ -66,7 +63,6 @@ export default function SidebarStaff({
           >
             <LayoutDashboard size={20} /> <span>ข้อมูลการเข้าใช้สนาม</span>
           </Link>
-
           <Link
             to="/staff/equipment"
             className={linkClass("/staff/equipment")}
@@ -74,7 +70,6 @@ export default function SidebarStaff({
           >
             <Package size={20} /> <span>จัดการอุปกรณ์กีฬา</span>
           </Link>
-
           <Link
             to="/staff/borrow-ledger"
             className={linkClass("/staff/borrow-ledger")}
@@ -82,7 +77,6 @@ export default function SidebarStaff({
           >
             <ClipboardList size={20} /> <span>บันทึกการยืม–คืน</span>
           </Link>
-
           <Link
             to="/staff/borrow-stats"
             className={linkClass("/staff/borrow-stats")}
@@ -90,8 +84,6 @@ export default function SidebarStaff({
           >
             <BarChart3 size={20} /> <span>จัดการเอกสาร</span>
           </Link>
-
-          {/* เมนูใหม่ที่เพิ่มเข้ามาให้ตรงกับ StaffMenu */}
           <Link
             to="/staff/feedback"
             className={linkClass("/staff/feedback")}
@@ -99,7 +91,6 @@ export default function SidebarStaff({
           >
             <MessageSquare size={20} /> <span>อ่านฟีดแบ็กนิสิต</span>
           </Link>
-
           <Link
             to="/staff/booking-manage"
             className={linkClass("/staff/booking-manage")}
@@ -109,7 +100,6 @@ export default function SidebarStaff({
           </Link>
         </nav>
 
-        {/* User Profile Footer */}
         <div className="p-6 border-t border-border-main mt-auto flex items-center gap-3 text-primary font-bold bg-primary-soft/20">
           <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-sm">
             <Settings size={20} />

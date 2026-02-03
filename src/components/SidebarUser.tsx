@@ -1,4 +1,4 @@
-import React from "react";
+import { useNavigate } from "react-router-dom"; // 1. เพิ่ม Import
 import { Home, CheckCircle, Trophy, User } from "lucide-react";
 import dsaLogo from "../assets/dsa.png";
 
@@ -9,6 +9,7 @@ export default function SidebarUser({
   open: boolean;
   onClose: () => void;
 }) {
+  const navigate = useNavigate(); // 2. ประกาศตัวแปร navigate
   const displayName = localStorage.getItem("display_name") || "ผู้ใช้งาน";
   const navLinkClass =
     "flex items-center gap-3 px-[25px] py-[15px] text-[#333] transition-colors hover:bg-bg-main font-medium";
@@ -25,14 +26,19 @@ export default function SidebarUser({
 
       {/* Sidebar Panel */}
       <aside
-        className={`fixed top-0 left-0 h-full w-[260px] bg-white z-[3000] shadow-[2px_0_10px_rgba(0,0,0,0.1)] flex flex-col transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full w-[260px] bg-white z-[3000] shadow-[2px_0_10px_rgba(0,0,0,0.1)] flex flex-col transition-transform duration-300 ease-in-out ${
+          open ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         <div className="h-[90px] px-5 flex items-center border-b border-[#eee]">
           <img
             src={dsaLogo}
             alt="Logo"
             className="h-[60px] cursor-pointer object-contain"
-            onClick={() => navigate("/user/menu")}
+            onClick={() => {
+              navigate("/user/menu");
+              onClose(); // ปิด sidebar เมื่อเปลี่ยนหน้าด้วย
+            }}
           />
         </div>
 

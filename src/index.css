@@ -1,10 +1,10 @@
-/* 1. Google Fonts ต้องอยู่บนสุด */
+/* 1. Google Fonts */
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap");
 
 /* 2. Import Tailwind v4 */
 @import "tailwindcss";
 
-/* 3. การตั้งค่า Theme (v4 style) */
+/* 3. การตั้งค่า Theme */
 @theme {
   --color-primary: #5f5aa2;
   --color-primary-dark: #4a4585;
@@ -27,26 +27,48 @@
 
 /* 4. Global Styles */
 @layer base {
-  html,
   body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--color-bg-main);
-    font-family: var(--font-kanit);
-    color: var(--color-text-main);
-    -webkit-font-smoothing: antialiased;
+    @apply m-0 p-0 w-full h-full bg-bg-main font-kanit text-text-main antialiased;
   }
 }
 
-/* 5. Custom Utilities */
+/* 5. Custom Components (ใส่ @apply สำหรับ Header ที่นี่) */
+@layer components {
+  .header-container {
+    @apply fixed top-0 left-0 right-0 h-header bg-surface flex items-center justify-between px-4 z-50 shadow-[0_1px_2px_rgba(0,0,0,0.1)];
+  }
+
+  .left-section {
+    @apply flex items-center gap-4;
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-full hover:bg-bg-main transition-colors cursor-pointer flex items-center justify-center text-text-main;
+  }
+
+  .logo-img {
+    @apply h-[60px] object-contain cursor-pointer;
+  }
+
+  .right-section {
+    @apply flex items-center gap-3;
+  }
+
+  .display-name {
+    @apply hidden sm:inline text-sm font-medium text-text-main;
+  }
+
+  .btn-logout {
+    @apply bg-primary text-white px-3.5 py-1.5 rounded-full text-[13px] font-semibold hover:opacity-90 transition-opacity cursor-pointer;
+  }
+}
+
+/* 6. Custom Utilities */
 @layer utilities {
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 10px;
+    @apply bg-slate-300 rounded-full;
   }
 }
