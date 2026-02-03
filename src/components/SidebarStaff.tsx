@@ -60,7 +60,7 @@ export default function SidebarStaff({ open, onClose }: { open: boolean; onClose
           </Link>
 
           <Link to="/staff/borrow-stats" className={linkClass("/staff/borrow-stats")} onClick={onClose}>
-            <BarChart3 size={20} /> <span>สถิติการยืม-คืน</span>
+            <BarChart3 size={20} /> <span>จัดการเอกสาร</span>
           </Link>
 
           {/* เมนูใหม่ที่เพิ่มเข้ามาให้ตรงกับ StaffMenu */}
