@@ -28,7 +28,7 @@ export default function StaffMenu() {
     {
       title: "จัดการเอกสาร",
       subtitle: "Document Management",
-      path: "/staff/borrow-stats",
+      path: "/staff/document-management",
       icon: <ClipboardList size={40} />,
     },
     {

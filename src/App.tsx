@@ -7,7 +7,7 @@ import Register from "./pages/Register";
 import StaffMenu from "./pages/staff/StaffMenu";
 import StaffEquipmentManagePage from "./pages/staff/StaffEquipmentManagePage";
 import StaffBorrowLedgerPage from "./pages/staff/StaffBorrowLedgerPage";
-import StaffBorrowStats from "./pages/staff/StaffBorrowStats";
+import StaffDocumentManagement from "./pages/staff/StaffDocumentManagement";
 import CheckinReportPage from "./pages/staff/CheckinReportPage";
 import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
 import StaffBookingManage from "./pages/staff/StaffBookingManage";
@@ -41,7 +41,7 @@ export default function App() {
           path="/staff/borrow-ledger"
           element={<StaffBorrowLedgerPage />}
         />
-        <Route path="/staff/borrow-stats" element={<StaffBorrowStats />} />
+        <Route path="/staff/document-management" element={<StaffDocumentManagement />} />
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
         <Route
           path="/staff/booking-manage"

@@ -8,7 +8,8 @@ import {
   ChevronDown,
   ChevronUp,
   History,
-  CheckCircle2,
+  Calendar,
+  Clock,
   Dribbble,
   Trophy,
   Activity,
@@ -19,7 +20,6 @@ const API = (
   "https://up-fms-api-hono.aman02012548.workers.dev"
 ).replace(/\/$/, "");
 
-// รายชื่อคณะ/หน่วยงาน มหาวิทยาลัยพะเยา
 const UP_FACULTIES = [
   "คณะเกษตรศาสตร์และทรัพยากรธรรมชาติ",
   "คณะเทคโนโลยีสารสนเทศและการสื่อสาร",
@@ -43,9 +43,7 @@ const UP_FACULTIES = [
 ];
 
 export default function EquipmentPage() {
-  const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">(
-    "borrow",
-  );
+  const [activeTab, setActiveTab] = useState<"borrow" | "return" | "history">("borrow");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const [stocks, setStocks] = useState<{ name: string; stock: number }[]>([]);
@@ -58,42 +56,40 @@ export default function EquipmentPage() {
     faculty: "",
     phone: "",
   });
-  const [borrowItems, setBorrowItems] = useState<
-    { name: string; qty: number }[]
-  >([]);
+  const [borrowItems, setBorrowItems] = useState<{ name: string; qty: number }[]>([]);
 
-  const refreshData = () => {
-    fetch(`${API}/api/equipment/stock/`)
-      .then((res) => res.json())
-      .then((data) => data.ok && setStocks(data.equipments));
+  // เพิ่ม State สำหรับการทำรายการย้อนหลัง
+  const [isBackdate, setIsBackdate] = useState(false);
+  const [backdateValue, setBackdateValue] = useState("");
 
-    if (activeTab === "return") {
-      fetch(`${API}/api/equipment/pending-returns/`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ok) {
-            const grouped = data.rows.reduce((acc: any, curr: any) => {
-              if (!acc[curr.student_id])
-                acc[curr.student_id] = {
-                  id: curr.student_id,
-                  faculty: curr.faculty,
-                  items: [],
-                };
-              acc[curr.student_id].items.push(curr);
-              return acc;
-            }, {});
-            setPendingReturns(Object.values(grouped));
-          }
-        });
-    }
+  const refreshData = async () => {
+    try {
+      const stockRes = await fetch(`${API}/api/staff/equipment/stock`);
+      const stockData = await stockRes.json();
+      if (stockData.ok) setStocks(stockData.equipments);
 
-    if (activeTab === "history") {
-      fetch(`${API}/api/staff/borrow-records/`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.ok && data.days.length > 0)
-            setBorrowHistory(data.days[0].rows);
-        });
+      if (activeTab === "return") {
+        const returnRes = await fetch(`${API}/api/equipment/pending-returns`);
+        const returnData = await returnRes.json();
+        if (returnData.ok) {
+          const grouped = returnData.rows.reduce((acc: any, curr: any) => {
+            if (!acc[curr.student_id])
+              acc[curr.student_id] = { id: curr.student_id, faculty: curr.faculty, items: [] };
+            acc[curr.student_id].items.push(curr);
+            return acc;
+          }, {});
+          setPendingReturns(Object.values(grouped));
+        }
+      }
+
+      if (activeTab === "history") {
+        const historyRes = await fetch(`${API}/api/staff/borrow-records`);
+        const historyData = await historyRes.json();
+        if (historyData.ok && historyData.days.length > 0)
+          setBorrowHistory(historyData.days[0].rows);
+      }
+    } catch (err) {
+      console.error("Failed to refresh data:", err);
     }
   };
 
@@ -104,9 +100,15 @@ export default function EquipmentPage() {
   const handleBorrowSubmit = async () => {
     if (!studentInfo.id || !studentInfo.faculty || borrowItems.length === 0)
       return alert("กรุณาระบุรหัสนิสิต คณะ และเลือกอุปกรณ์");
+
+    // ตรวจสอบการเลือกวันที่ย้อนหลัง
+    if (isBackdate && !backdateValue) {
+      return alert("กรุณาระบุวันที่และเวลาที่ต้องการบันทึกย้อนหลัง");
+    }
+
     try {
       for (const item of borrowItems) {
-        await fetch(`${API}/api/equipment/borrow/`, {
+        await fetch(`${API}/api/equipment/borrow`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -115,36 +117,35 @@ export default function EquipmentPage() {
             faculty: studentInfo.faculty,
             equipment: item.name,
             qty: item.qty,
+            // ส่งค่า borrow_date ไปยัง API (ถ้าเป็นย้อนหลังจะส่งค่าวันที่ ถ้าไม่ส่งจะเป็น null/ปัจจุบัน)
+            borrow_date: isBackdate ? backdateValue : null,
           }),
         });
       }
-      alert("ยืมอุปกรณ์สำเร็จ");
+      alert(isBackdate ? "บันทึกรายการย้อนหลังสำเร็จ" : "ยืมอุปกรณ์สำเร็จ");
       setBorrowItems([]);
+      setStudentInfo({ id: "", name: "", faculty: "", phone: "" });
+      setIsBackdate(false);
+      setBackdateValue("");
       refreshData();
     } catch (e) {
       alert("เกิดข้อผิดพลาดในการยืม");
     }
   };
 
-  const handleReturnItem = async (
-    sid: string,
-    faculty: string,
-    itemName: string,
-    qty: number,
-  ) => {
-    const res = await fetch(`${API}/api/equipment/return/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        student_id: sid,
-        faculty,
-        equipment: itemName,
-        qty,
-      }),
-    });
-    if (res.ok) {
-      alert("คืนอุปกรณ์สำเร็จ");
-      refreshData();
+  const handleReturnItem = async (sid: string, faculty: string, itemName: string, qty: number) => {
+    try {
+      const res = await fetch(`${API}/api/equipment/return`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ student_id: sid, faculty, equipment: itemName, qty }),
+      });
+      if (res.ok) {
+        alert("คืนอุปกรณ์สำเร็จ");
+        refreshData();
+      }
+    } catch (e) {
+      alert("เกิดข้อผิดพลาดในการคืน");
     }
   };
 
@@ -152,10 +153,8 @@ export default function EquipmentPage() {
     const n = (name || "").toLowerCase();
     const iconClass = "p-1.5 bg-primary-soft text-primary rounded-lg shrink-0";
     if (n.includes("บาส")) return <Dribbble size={32} className={iconClass} />;
-    if (n.includes("แบด") || n.includes("ไม้"))
-      return <Trophy size={32} className={iconClass} />;
-    if (n.includes("บอล") || n.includes("ฟุต"))
-      return <Activity size={32} className={iconClass} />;
+    if (n.includes("แบด") || n.includes("ไม้")) return <Trophy size={32} className={iconClass} />;
+    if (n.includes("บอล") || n.includes("ฟุต")) return <Activity size={32} className={iconClass} />;
     return <Package size={32} className={iconClass} />;
   };
 
@@ -165,16 +164,9 @@ export default function EquipmentPage() {
 
     if (exist) {
       const newQty = exist.qty + delta;
-      if (newQty > (stockItem?.stock || 0) && delta > 0)
-        return alert("สินค้าในสต็อกไม่พอ");
-      if (newQty <= 0)
-        setBorrowItems(borrowItems.filter((i) => i.name !== itemName));
-      else
-        setBorrowItems(
-          borrowItems.map((i) =>
-            i.name === itemName ? { ...i, qty: newQty } : i,
-          ),
-        );
+      if (newQty > (stockItem?.stock || 0) && delta > 0) return alert("สินค้าในสต็อกไม่พอ");
+      if (newQty <= 0) setBorrowItems(borrowItems.filter((i) => i.name !== itemName));
+      else setBorrowItems(borrowItems.map((i) => (i.name === itemName ? { ...i, qty: newQty } : i)));
     } else if (delta > 0) {
       if ((stockItem?.stock || 0) <= 0) return alert("สินค้าหมด");
       setBorrowItems([...borrowItems, { name: itemName, qty: 1 }]);
@@ -183,376 +175,183 @@ export default function EquipmentPage() {
 
   return (
     <div className="max-w-[1000px] mx-auto p-5 font-kanit">
-      {/* Tabs Navigation */}
       <nav className="flex gap-5 border-b border-border-main mb-6">
         {(["borrow", "return", "history"] as const).map((tab) => (
           <button
             key={tab}
-            className={`pb-2.5 px-1 font-semibold transition-all cursor-pointer border-b-2 ${
-              activeTab === tab
-                ? "text-text-main border-primary"
-                : "text-text-muted border-transparent hover:text-text-main"
-            }`}
+            className={`pb-2.5 px-1 font-semibold transition-all cursor-pointer border-b-2 ${activeTab === tab ? "text-text-main border-primary" : "text-text-muted border-transparent hover:text-text-main"
+              }`}
             onClick={() => setActiveTab(tab)}
           >
-            {tab === "borrow"
-              ? "ยืมอุปกรณ์"
-              : tab === "return"
-                ? "คืนอุปกรณ์"
-                : "ประวัติการยืม-คืน"}
+            {tab === "borrow" ? "ยืมอุปกรณ์" : tab === "return" ? "คืนอุปกรณ์" : "ประวัติการยืม-คืน"}
           </button>
         ))}
       </nav>
 
       <div className="space-y-5">
-        {/* --- TAB: BORROW --- */}
         {activeTab === "borrow" && (
           <div className="flex flex-col gap-5 animate-in fade-in duration-300">
             {/* ข้อมูลผู้ยืม */}
-            <section className="bg-surface border border-border-main rounded-xl p-5 shadow-sm">
-              <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold mb-4">
-                <User size={18} /> ข้อมูลผู้ยืม
-              </h4>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">
-                      ชื่อ-นามสกุล
+            <section className="bg-white border border-border-main rounded-xl p-5 shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold">
+                  <User size={18} /> ข้อมูลผู้ยืม
+                </h4>
+                {/* ปุ่มเปิดโหมดลงบันทึกย้อนหลัง */}
+                <button
+                  onClick={() => setIsBackdate(!isBackdate)}
+                  className={`text-[10px] px-2 py-1 rounded-md font-bold transition-all border ${isBackdate ? "bg-orange-50 text-orange-600 border-orange-200" : "bg-gray-50 text-gray-400 border-gray-100"
+                    }`}
+                >
+                  {isBackdate ? "● กำลังบันทึกย้อนหลัง" : "เพิ่มรายการย้อนหลัง"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* แสดงช่องเลือกวันที่เมื่อเปิดโหมด Backdate */}
+                {isBackdate && (
+                  <div className="md:col-span-2 space-y-1.5 p-3 bg-orange-50/50 border border-orange-100 rounded-lg animate-in zoom-in-95 duration-200">
+                    <label className="text-xs font-bold text-orange-600 flex items-center gap-1.5 uppercase">
+                      <Calendar size={14} /> วันที่และเวลาที่ยืมย้อนหลัง
                     </label>
                     <input
-                      type="text"
-                      placeholder="ชื่อ-นามสกุล"
-                      className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      value={studentInfo.name}
-                      onChange={(e) =>
-                        setStudentInfo({ ...studentInfo, name: e.target.value })
-                      }
+                      type="datetime-local"
+                      className="w-full p-2.5 border border-orange-200 rounded-lg bg-white outline-none focus:ring-2 focus:ring-orange-500/20"
+                      value={backdateValue}
+                      onChange={(e) => setBackdateValue(e.target.value)}
                     />
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">
-                      รหัสนิสิต / รหัสนักเรียน
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="ระบุรหัสประจำตัว"
-                      className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      value={studentInfo.id}
-                      onChange={(e) =>
-                        setStudentInfo({ ...studentInfo, id: e.target.value })
-                      }
-                    />
-                  </div>
+                )}
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase">ชื่อ-นามสกุล</label>
+                  <input type="text" className="w-full p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20" value={studentInfo.name} onChange={(e) => setStudentInfo({ ...studentInfo, name: e.target.value })} />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">
-                      คณะ / หน่วยงาน
-                    </label>
-                    <select
-                      className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all bg-white"
-                      value={studentInfo.faculty}
-                      onChange={(e) =>
-                        setStudentInfo({
-                          ...studentInfo,
-                          faculty: e.target.value,
-                        })
-                      }
-                    >
-                      <option value="">เลือกคณะ / หน่วยงาน</option>
-                      {UP_FACULTIES.map((f) => (
-                        <option key={f} value={f}>
-                          {f}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-bold text-text-muted">
-                      เบอร์โทรศัพท์
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="เบอร์โทรศัพท์ 10 หลัก"
-                      maxLength={10}
-                      className="p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                      value={studentInfo.phone}
-                      onChange={(e) =>
-                        setStudentInfo({
-                          ...studentInfo,
-                          phone: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase">รหัสนิสิต / รหัสนักเรียน</label>
+                  <input type="text" className="w-full p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20" value={studentInfo.id} onChange={(e) => setStudentInfo({ ...studentInfo, id: e.target.value })} />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase">คณะ / หน่วยงาน</label>
+                  <select className="w-full p-2.5 border border-border-main rounded-lg bg-white" value={studentInfo.faculty} onChange={(e) => setStudentInfo({ ...studentInfo, faculty: e.target.value })}>
+                    <option value="">เลือกคณะ / หน่วยงาน</option>
+                    {UP_FACULTIES.map((f) => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-text-muted uppercase">เบอร์โทรศัพท์</label>
+                  <input type="text" maxLength={10} className="w-full p-2.5 border border-border-main rounded-lg" value={studentInfo.phone} onChange={(e) => setStudentInfo({ ...studentInfo, phone: e.target.value })} />
                 </div>
               </div>
             </section>
 
-            {/* เลือกอุปกรณ์จากสต็อก */}
-            <section className="bg-surface border border-border-main rounded-xl p-5 shadow-sm">
+            {/* เลือกจากสต็อกจริง */}
+            <section className="bg-white border border-border-main rounded-xl p-5 shadow-sm">
               <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold mb-4">
-                <Package size={18} /> เลือกอุปกรณ์จากสต็อก
+                <Package size={18} /> เลือกอุปกรณ์จากคลัง
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {stocks.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex justify-between items-center p-3 bg-bg-main border border-border-main rounded-xl"
-                  >
-                    <div className="flex items-center gap-3">
+                  <div key={item.name} className="flex justify-between items-center p-3 bg-gray-50 border border-border-main rounded-xl">
+                    <div className="flex items-center gap-3 overflow-hidden">
                       {getSportIcon(item.name)}
                       <div className="overflow-hidden">
-                        <strong className="block text-sm truncate w-full">
-                          {item.name}
-                        </strong>
-                        <small className="text-text-muted text-xs">
-                          คงเหลือ {item.stock}
+                        <strong className="block text-sm truncate">{item.name}</strong>
+                        <small className={`text-[10px] font-bold ${item.stock > 0 ? 'text-gray-400' : 'text-red-500'}`}>
+                          {item.stock > 0 ? `คงเหลือ ${item.stock}` : "สินค้าหมด"}
                         </small>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 bg-white p-1 px-2 rounded-full border border-border-main shadow-sm">
-                      <button
-                        className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer"
-                        onClick={() => handleUpdateBorrowQty(item.name, -1)}
-                      >
-                        <Minus size={14} />
-                      </button>
-                      <span className="font-extrabold min-w-[20px] text-center text-sm">
-                        {borrowItems.find((i) => i.name === item.name)?.qty ||
-                          0}
-                      </span>
-                      <button
-                        className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer"
-                        onClick={() => handleUpdateBorrowQty(item.name, 1)}
-                      >
-                        <Plus size={14} />
-                      </button>
+                    <div className="flex items-center gap-2 bg-white p-1 px-2 rounded-full border border-border-main shadow-sm">
+                      <button className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer" onClick={() => handleUpdateBorrowQty(item.name, -1)}><Minus size={12} /></button>
+                      <span className="font-extrabold text-sm min-w-[15px] text-center">{borrowItems.find((i) => i.name === item.name)?.qty || 0}</span>
+                      <button className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer" onClick={() => handleUpdateBorrowQty(item.name, 1)}><Plus size={12} /></button>
                     </div>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* Summary Section */}
+            {/* ตะกร้าที่เลือกยืม */}
             {borrowItems.length > 0 && (
-              <section className="bg-primary-soft/30 border-t-4 border-primary rounded-xl p-5 animate-in slide-in-from-bottom duration-300">
-                <h4 className="text-text-main font-bold mb-3">
-                  รายการที่เลือกยืม
+              <section className="bg-primary/5 border-t-4 border-primary rounded-xl p-5 animate-in slide-in-from-bottom duration-300">
+                <h4 className="font-bold mb-3 flex items-center justify-between">
+                  <span>รายการที่กำลังจะยืม</span>
+                  {isBackdate && <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">บันทึกย้อนหลัง</span>}
                 </h4>
                 <div className="space-y-2 mb-4">
                   {borrowItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center py-2 border-b border-dashed border-primary/20"
-                    >
-                      <div className="flex items-center gap-2">
-                        {getSportIcon(item.name)}
-                        <span className="text-sm font-medium">
-                          {item.name} x {item.qty} รายการ
-                        </span>
-                      </div>
-                      <button
-                        className="text-red-500 p-1 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                        onClick={() =>
-                          handleUpdateBorrowQty(item.name, -item.qty)
-                        }
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                    <div key={idx} className="flex justify-between items-center py-2 border-b border-dashed border-primary/20">
+                      <span className="text-sm font-medium">{item.name} x {item.qty} ชิ้น</span>
+                      <button className="text-red-500 p-1 hover:bg-red-50 rounded-md" onClick={() => handleUpdateBorrowQty(item.name, -item.qty)}><Trash2 size={16} /></button>
                     </div>
                   ))}
                 </div>
-                <button
-                  className="w-full py-4 bg-text-main text-white rounded-lg font-bold hover:opacity-90 transition-opacity cursor-pointer shadow-lg"
-                  onClick={handleBorrowSubmit}
-                >
-                  ยืนยันการยืมอุปกรณ์
+                <button className="w-full py-4 bg-primary text-white rounded-lg font-bold hover:shadow-lg transition-all cursor-pointer" onClick={handleBorrowSubmit}>
+                  {isBackdate ? "ยืนยันบันทึกรายการย้อนหลัง" : "ยืนยันการทำรายการยืม"}
                 </button>
               </section>
             )}
           </div>
         )}
 
-        {/* --- TAB: RETURN --- */}
+        {/* TAB: RETURN */}
         {activeTab === "return" && (
           <div className="space-y-3 animate-in fade-in duration-300">
-            {pendingReturns.length === 0 && (
-              <div className="text-center py-20 bg-surface border border-dashed border-border-main rounded-xl text-text-muted">
-                ไม่มีรายการค้างคืน
-              </div>
-            )}
-            {pendingReturns.map((user) => (
-              <div
-                key={user.id}
-                className={`border border-border-main rounded-xl overflow-hidden bg-surface shadow-sm transition-all ${
-                  expandedId === user.id ? "ring-2 ring-primary/20" : ""
-                }`}
-              >
-                <div
-                  className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50"
-                  onClick={() =>
-                    setExpandedId(expandedId === user.id ? null : user.id)
-                  }
-                >
-                  <div className="flex items-center gap-4">
-                    <strong className="text-primary text-lg">{user.id}</strong>
-                    <span className="text-sm text-text-muted hidden sm:inline">
-                      {user.faculty}
-                    </span>
+            {pendingReturns.length === 0 ? (
+              <div className="text-center py-20 bg-white border border-dashed border-border-main rounded-xl text-text-muted">ไม่มีรายการค้างคืน</div>
+            ) : (
+              pendingReturns.map((user) => (
+                <div key={user.id} className="border border-border-main rounded-xl bg-white shadow-sm overflow-hidden">
+                  <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}>
+                    <div className="flex items-center gap-4"><strong className="text-primary text-lg">{user.id}</strong><span className="text-sm text-text-muted">{user.faculty}</span></div>
+                    {expandedId === user.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
-                  {expandedId === user.id ? (
-                    <ChevronUp size={20} />
-                  ) : (
-                    <ChevronDown size={20} />
-                  )}
-                </div>
-
-                {expandedId === user.id && (
-                  <div className="p-4 bg-gray-50 border-t border-border-main animate-in slide-in-from-top duration-300">
-                    <div className="overflow-x-auto rounded-lg border border-border-main">
-                      <table className="w-full text-sm">
-                        <thead className="hidden md:table-header-group bg-white border-b-2 border-border-main">
-                          <tr>
-                            <th className="p-3 text-left">รายการ</th>
-                            <th className="p-3">ค้างคืน</th>
-                            <th className="p-3">จัดการ</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border-main">
+                  {expandedId === user.id && (
+                    <div className="p-4 bg-gray-50 border-t border-border-main">
+                      <table className="w-full text-sm bg-white rounded-lg">
+                        <tbody className="divide-y divide-gray-100">
                           {user.items.map((item: any, i: number) => (
-                            <tr
-                              key={i}
-                              className="flex flex-col md:table-row bg-white md:bg-transparent mb-3 md:mb-0"
-                            >
-                              <td
-                                className="p-3 flex justify-between md:table-cell"
-                                data-label="รายการ"
-                              >
-                                <div className="flex items-center gap-2 md:justify-start">
-                                  {getSportIcon(item.equipment)}
-                                  <span className="font-medium">
-                                    {item.equipment}
-                                  </span>
-                                </div>
-                              </td>
-                              <td
-                                className="p-3 flex justify-between md:table-cell text-center"
-                                data-label="ค้างคืน"
-                              >
-                                <span className="text-red-500 font-bold">
-                                  {item.remaining}
-                                </span>
-                              </td>
-                              <td
-                                className="p-3 flex justify-between md:table-cell text-center"
-                                data-label="จัดการ"
-                              >
-                                <button
-                                  className="w-full md:w-auto bg-primary text-white px-4 py-1.5 rounded-lg font-bold hover:bg-primary-dark transition-colors cursor-pointer text-xs"
-                                  onClick={() =>
-                                    handleReturnItem(
-                                      user.id,
-                                      user.faculty,
-                                      item.equipment,
-                                      item.remaining,
-                                    )
-                                  }
-                                >
-                                  ยืนยันคืน
-                                </button>
-                              </td>
+                            <tr key={i}>
+                              <td className="p-3 font-medium">{item.equipment}</td>
+                              <td className="p-3 text-center text-red-500 font-bold">{item.remaining} ชิ้น</td>
+                              <td className="p-3 text-right"><button className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold" onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}>คืน</button></td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
-        {/* --- TAB: HISTORY --- */}
+        {/* TAB: HISTORY */}
         {activeTab === "history" && (
-          <div className="bg-surface border border-border-main rounded-xl p-6 shadow-sm overflow-hidden animate-in fade-in duration-300">
-            <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold mb-6">
-              <History size={18} /> ประวัติการทำรายการวันนี้
-            </h4>
-            <div className="overflow-x-auto rounded-xl border border-border-main">
-              <table className="w-full text-sm">
-                <thead className="hidden md:table-header-group bg-gray-50 border-b-2 border-border-main">
-                  <tr>
-                    <th className="p-4 text-center">เวลา</th>
-                    <th className="p-4 text-left">ผู้ยืม</th>
-                    <th className="p-4 text-center">รายการ</th>
-                    <th className="p-4 text-center">จำนวน</th>
-                    <th className="p-4 text-center">สถานะ</th>
+          <div className="bg-white border border-border-main rounded-xl p-6 shadow-sm overflow-x-auto animate-in fade-in duration-300">
+            <h4 className="text-primary flex items-center gap-2.5 font-bold mb-6"><History size={18} /> ประวัติการทำรายการวันนี้</h4>
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr><th className="p-3 text-left">เวลา</th><th className="p-3 text-left">ผู้ยืม</th><th className="p-3 text-left">รายการ</th><th className="p-3">จำนวน</th><th className="p-3">สถานะ</th></tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {borrowHistory.map((h: any, i: number) => (
+                  <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="p-3 text-gray-400">{h.time}</td>
+                    <td className="p-3 font-bold">{h.student_id}<br /><small className="font-normal text-gray-400">{h.faculty}</small></td>
+                    <td className="p-3">{h.equipment}</td>
+                    <td className="p-3 text-center font-bold">{h.qty}</td>
+                    <td className="p-3 text-center">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${h.action === 'return' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>
+                        {h.action === 'return' ? '✓ คืนแล้ว' : '● กำลังยืม'}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-border-main">
-                  {borrowHistory.map((h: any, i: number) => (
-                    <tr
-                      key={i}
-                      className="flex flex-col md:table-row bg-white md:bg-transparent hover:bg-primary-soft/10 transition-colors"
-                    >
-                      <td
-                        className="p-4 text-center flex justify-between md:table-cell"
-                        data-label="เวลา"
-                      >
-                        <span className="text-text-muted">{h.time}</span>
-                      </td>
-                      <td
-                        className="p-4 flex justify-between md:table-cell"
-                        data-label="ผู้ยืม"
-                      >
-                        <div className="text-right md:text-left">
-                          <strong className="block text-text-main">
-                            {h.student_id}
-                          </strong>
-                          <small className="text-text-muted">{h.faculty}</small>
-                        </div>
-                      </td>
-                      <td
-                        className="p-4 text-center flex justify-between md:table-cell"
-                        data-label="รายการ"
-                      >
-                        <span className="font-medium">{h.equipment}</span>
-                      </td>
-                      <td
-                        className="p-4 text-center flex justify-between md:table-cell font-bold"
-                        data-label="จำนวน"
-                      >
-                        {h.qty} ชิ้น
-                      </td>
-                      <td
-                        className="p-4 flex justify-between md:table-cell"
-                        data-label="สถานะ"
-                      >
-                        <div className="flex justify-center w-full">
-                          <span
-                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
-                              h.action === "return"
-                                ? "bg-green-100 text-green-600"
-                                : "bg-orange-100 text-orange-600"
-                            }`}
-                          >
-                            {h.action === "return" ? (
-                              <>
-                                <CheckCircle2 size={14} /> คืนแล้ว
-                              </>
-                            ) : (
-                              "🟠 กำลังยืม"
-                            )}
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
