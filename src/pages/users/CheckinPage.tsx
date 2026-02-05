@@ -82,7 +82,7 @@ export default function CheckinPage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${BACKEND}/api/checkin/event/`, {
+      const res = await fetch(`${BACKEND}/api/checkin/event`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
