@@ -219,12 +219,7 @@ export default function CheckinReportPage() {
                 </button>
               ))}
             </div>
-            <button
-              className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold hover:bg-slate-50 cursor-pointer transition-colors"
-              onClick={() => window.print()}
-            >
-              <Printer size={18} /> พิมพ์รายงาน
-            </button>
+
           </div>
 
           <div className="w-full max-w-[500px] min-h-[300px] relative flex items-center justify-center">
