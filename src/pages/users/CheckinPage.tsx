@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, Users, UserRound } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Users,
+  UserRound,
+  CalendarDays,
+  History,
+} from "lucide-react";
 
 const TOP = [
   { k: "outdoor", name: "สนามกลางแจ้ง", icon: "🏸" },
@@ -28,6 +35,9 @@ export default function CheckinPage() {
   const BACKEND = (
     import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
   ).replace(/\/$/, "");
+
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayISO);
   const [currentFacility, setCurrentFacility] = useState<string | null>(null);
   const [selectedSub, setSelectedSub] = useState<any>(null);
   const [students, setStudents] = useState("");
@@ -36,20 +46,25 @@ export default function CheckinPage() {
   const [doneMap, setDoneMap] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const todayStr = new Date().toLocaleDateString("th-TH", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const isoDate = new Date().toISOString().slice(0, 10);
+  const isBackdating = selectedDate !== todayISO;
 
   useEffect(() => {
-    const raw = localStorage.getItem("checkin_progress");
+    const raw = localStorage.getItem("checkin_progress_v2");
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.date === isoDate) setDoneMap(parsed.done || {});
+      setDoneMap(parsed[selectedDate] || {});
+    } else {
+      setDoneMap({});
     }
-  }, [isoDate]);
+  }, [selectedDate]);
+
+  const formatThaiDate = (iso: string) => {
+    return new Date(iso).toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
 
   async function doCheckin() {
     if (!students && !staff) {
@@ -61,37 +76,43 @@ export default function CheckinPage() {
         ? `outdoor:${selectedSub?.k}`
         : currentFacility;
     if (key && doneMap[key]) {
-      setError("วันนี้บันทึกสนามนี้ไปแล้ว");
+      setError("สนามนี้ถูกบันทึกไปแล้ว");
       return;
     }
 
     setIsSubmitting(true);
-    const body = {
-      facility: currentFacility,
-      sub_facility: currentFacility === "outdoor" ? selectedSub?.name : "",
-      students: Number(students) || 0,
-      staff: Number(staff) || 0,
-      action: "in",
-    };
-
     try {
       const res = await fetch(`${BACKEND}/api/checkin/event/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          date: selectedDate,
+          facility: currentFacility,
+          sub_facility: currentFacility === "outdoor" ? selectedSub?.name : "",
+          students: Number(students) || 0,
+          staff: Number(staff) || 0,
+          action: "in",
+        }),
       });
       if (!res.ok) throw new Error("บันทึกไม่สำเร็จ");
 
+      const raw = localStorage.getItem("checkin_progress_v2");
+      const fullStore = raw ? JSON.parse(raw) : {};
       const nextDone = { ...doneMap, [key as string]: true };
+      fullStore[selectedDate] = nextDone;
       setDoneMap(nextDone);
-      localStorage.setItem(
-        "checkin_progress",
-        JSON.stringify({ date: isoDate, done: nextDone }),
-      );
+      localStorage.setItem("checkin_progress_v2", JSON.stringify(fullStore));
 
       document.getElementById("overlay")?.classList.remove("hidden");
       document.getElementById("overlay")?.classList.add("flex");
-      setTimeout(() => window.location.reload(), 1500);
+      setTimeout(() => {
+        document.getElementById("overlay")?.classList.add("hidden");
+        setCurrentFacility(null);
+        setSelectedSub(null);
+        setStudents("");
+        setStaff("");
+        setIsSubmitting(false);
+      }, 1500);
     } catch (e: any) {
       setError(e.message);
       setIsSubmitting(false);
@@ -99,160 +120,212 @@ export default function CheckinPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-main font-kanit p-5 md:p-15 animate-in fade-in duration-500">
-      <main className="max-w-[1100px] mx-auto">
-        {/* Header Section */}
-        <div className="text-center mb-8 mt-5">
-          <div className="inline-flex items-center px-4 py-1.5 bg-surface text-primary border border-primary/20 rounded-xl text-sm font-semibold mb-4 shadow-sm hover:bg-primary-soft transition-colors cursor-default">
-            {todayStr}
+    <div className="min-h-screen bg-[#f8fafc] font-kanit pb-10">
+      {/* Top Navigation / Status Bar */}
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-5 py-3">
+        <div className="max-w-[1100px] mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-3 h-3 rounded-full ${isBackdating ? "bg-amber-400 animate-pulse" : "bg-green-500"}`}
+            />
+            <span className="text-sm font-bold text-slate-600">
+              {isBackdating ? "โหมดบันทึกย้อนหลัง" : "ระบบบันทึกปกติ"}
+            </span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-[#0f172a] mb-2">
-            บันทึกการใช้สนาม
-          </h1>
+          <div className="flex items-center gap-3 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+            <CalendarDays size={16} className="text-slate-500" />
+            <input
+              type="date"
+              value={selectedDate}
+              max={todayISO}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setCurrentFacility(null);
+              }}
+              className="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer"
+            />
+          </div>
         </div>
+      </nav>
+
+      <main className="max-w-[1100px] mx-auto p-5 md:p-10">
+        <header className="mb-10 text-center md:text-left">
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+            บันทึกสถิติการใช้สนาม
+          </h1>
+          <p className="text-slate-500 mt-1">
+            ประจำวันที่{" "}
+            <span className="text-primary font-bold">
+              {formatThaiDate(selectedDate)}
+            </span>
+          </p>
+        </header>
 
         {!currentFacility ? (
-          <section className="bg-surface rounded-3xl shadow-sm border border-border-main p-6 md:p-10">
-            <h3 className="text-xl font-bold mb-6 text-center text-text-main">
-              เลือกประเภทสนาม
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {TOP.map((f) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-500">
+            {TOP.map((f) => {
+              const isOutdoorFull =
+                f.k === "outdoor" &&
+                OUTDOOR_SUBS.every((s) => doneMap[`outdoor:${s.k}`]);
+              const isDone =
+                (f.k !== "outdoor" && doneMap[f.k]) || isOutdoorFull;
+
+              return (
                 <button
                   key={f.k}
-                  className="flex flex-col sm:flex-col md:flex-col items-center gap-3 p-6 md:p-10 bg-gray-50 border-2 border-transparent rounded-[20px] cursor-pointer transition-all duration-300 hover:bg-white hover:border-primary hover:-translate-y-1 hover:shadow-lg active:scale-95 group"
                   onClick={() => setCurrentFacility(f.k)}
+                  className={`group relative flex flex-col items-center p-8 rounded-[32px] border-2 transition-all duration-300 shadow-sm
+                    ${
+                      isDone && f.k !== "outdoor"
+                        ? "bg-slate-50 border-slate-100 opacity-60 cursor-default"
+                        : "bg-white border-transparent hover:border-primary hover:shadow-xl hover:-translate-y-2"
+                    }`}
                 >
-                  <span className="text-5xl group-hover:scale-110 transition-transform">
+                  <div
+                    className={`text-5xl mb-4 transition-transform group-hover:scale-125 ${isDone && f.k !== "outdoor" ? "grayscale" : ""}`}
+                  >
                     {f.icon}
-                  </span>
-                  <span className="font-bold text-lg text-slate-700">
+                  </div>
+                  <span className="text-lg font-bold text-slate-700">
                     {f.name}
                   </span>
+                  {isDone && (
+                    <div className="absolute top-4 right-4 bg-green-500 text-white p-1 rounded-full">
+                      <CheckCircle2 size={16} />
+                    </div>
+                  )}
                 </button>
-              ))}
-            </div>
-          </section>
+              );
+            })}
+          </div>
         ) : (
-          <section className="bg-surface rounded-3xl shadow-sm border border-primary/10 p-6 md:p-10 animate-in slide-in-from-bottom-4 duration-300">
-            {/* Back Button */}
+          <div className="bg-white rounded-[40px] shadow-xl shadow-slate-200/50 border border-slate-100 p-6 md:p-12 animate-in zoom-in-95 duration-300">
             <button
-              className="flex items-center justify-center md:justify-start gap-2 w-full md:w-auto bg-gray-100 text-text-muted border border-border-main px-4 py-2 rounded-xl font-semibold text-sm cursor-pointer transition-all hover:bg-white hover:text-primary hover:border-primary hover:-translate-x-1 mb-6"
               onClick={() => {
                 setCurrentFacility(null);
                 setSelectedSub(null);
                 setError("");
               }}
+              className="inline-flex items-center gap-2 text-slate-400 hover:text-primary font-bold transition-colors mb-8 group"
             >
-              <ArrowLeft size={18} strokeWidth={2.5} />
-              <span>กลับไปหน้าเลือกสนาม</span>
+              <ArrowLeft
+                size={20}
+                className="group-hover:-translate-x-1 transition-transform"
+              />
+              เปลี่ยนสนาม
             </button>
 
             {currentFacility === "outdoor" && !selectedSub ? (
-              <div className="animate-in fade-in duration-300">
-                <h3 className="text-xl font-bold mb-6 text-center">
-                  ระบุสนามกลางแจ้งย่อย
-                </h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="space-y-6">
+                <h2 className="text-2xl font-black text-slate-800 text-center">
+                  เลือกสนามย่อย
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {OUTDOOR_SUBS.map((s) => {
                     const isDone = doneMap[`outdoor:${s.k}`];
                     return (
                       <button
                         key={s.k}
-                        className={`p-4 rounded-xl font-semibold border-1.5 transition-all cursor-pointer flex justify-center items-center gap-2 ${
-                          isDone
-                            ? "bg-green-50 border-green-200 text-green-600 opacity-70 cursor-not-allowed"
-                            : "bg-white border-slate-200 hover:border-primary hover:text-primary"
-                        }`}
-                        onClick={() => !isDone && setSelectedSub(s)}
                         disabled={isDone}
+                        onClick={() => setSelectedSub(s)}
+                        className={`p-5 rounded-2xl font-bold border-2 transition-all flex items-center justify-between
+                          ${
+                            isDone
+                              ? "bg-slate-50 border-slate-100 text-slate-300"
+                              : "bg-white border-slate-100 hover:border-primary hover:text-primary hover:bg-primary/5"
+                          }`}
                       >
-                        {s.name}{" "}
-                        {isDone && <span className="text-green-500">✔</span>}
+                        {s.name}
+                        {isDone && <CheckCircle2 size={18} />}
                       </button>
                     );
                   })}
                 </div>
               </div>
             ) : (
-              <div className="max-w-[600px] mx-auto animate-in zoom-in-95 duration-200">
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-text-main">
+              <div className="max-w-xl mx-auto">
+                <div className="text-center mb-10">
+                  <span className="bg-primary/10 text-primary px-4 py-1 rounded-full text-sm font-bold uppercase tracking-widest">
                     {
                       FACILITY_LABELS[
                         currentFacility as keyof typeof FACILITY_LABELS
                       ]
                     }
-                    {selectedSub && (
-                      <span className="text-primary">
-                        {" "}
-                        / {selectedSub.name}
-                      </span>
-                    )}
+                  </span>
+                  <h2 className="text-4xl font-black text-slate-800 mt-3">
+                    {selectedSub
+                      ? selectedSub.name
+                      : FACILITY_LABELS[
+                          currentFacility as keyof typeof FACILITY_LABELS
+                        ]}
                   </h2>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-bold text-slate-600">
-                      <UserRound size={16} /> จำนวนนิสิต (คน)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+                  <div className="space-y-3">
+                    <label className="text-slate-500 font-bold ml-2 flex items-center gap-2">
+                      <UserRound size={18} className="text-primary" />{" "}
+                      จำนวนนิสิต
                     </label>
                     <input
-                      className="w-full p-4.5 border-2 border-slate-200 rounded-2xl text-2xl font-bold text-center outline-none focus:border-primary focus:bg-primary-soft/10 transition-all"
                       type="number"
-                      placeholder="0"
+                      inputMode="numeric"
                       value={students}
                       onChange={(e) => setStudents(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 text-3xl font-black text-center text-slate-800 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-bold text-slate-600">
-                      <Users size={16} /> จำนวนบุคลากร (คน)
+                  <div className="space-y-3">
+                    <label className="text-slate-500 font-bold ml-2 flex items-center gap-2">
+                      <Users size={18} className="text-indigo-500" />{" "}
+                      จำนวนบุคลากร
                     </label>
                     <input
-                      className="w-full p-4.5 border-2 border-slate-200 rounded-2xl text-2xl font-bold text-center outline-none focus:border-primary focus:bg-primary-soft/10 transition-all"
                       type="number"
-                      placeholder="0"
+                      inputMode="numeric"
                       value={staff}
                       onChange={(e) => setStaff(e.target.value)}
+                      placeholder="0"
+                      className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl p-6 text-3xl font-black text-center text-slate-800 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                     />
                   </div>
                 </div>
 
                 {error && (
-                  <div className="p-3 bg-red-50 text-red-500 rounded-lg text-center font-bold mb-4 animate-bounce">
-                    {error}
+                  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-600 font-bold rounded-r-xl animate-shake">
+                    ⚠️ {error}
                   </div>
                 )}
 
                 <button
-                  className="w-full md:max-w-xs mx-auto block p-5 bg-gradient-to-r from-primary to-indigo-500 text-white rounded-[18px] text-xl font-extrabold cursor-pointer transition-all hover:opacity-90 hover:-translate-y-1 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   onClick={doCheckin}
                   disabled={isSubmitting}
+                  className="w-full py-6 bg-slate-900 text-white rounded-[28px] text-xl font-bold shadow-xl shadow-slate-900/20 hover:bg-primary transition-all active:scale-[0.98] disabled:bg-slate-300 flex items-center justify-center gap-3"
                 >
-                  {isSubmitting ? "กำลังบันทึก..." : "ยืนยันการบันทึก"}
+                  {isSubmitting ? (
+                    <div className="w-6 h-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>บันทึกข้อมูลเรียบร้อย</>
+                  )}
                 </button>
               </div>
             )}
-          </section>
+          </div>
         )}
       </main>
 
-      {/* Success Overlay */}
+      {/* Overlay Success */}
       <div
         id="overlay"
-        className="fixed inset-0 bg-slate-900/85 backdrop-blur-md hidden items-center justify-center z-[1000] p-5"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[1000] p-6"
       >
-        <div className="bg-white p-12 rounded-[32px] text-center w-full max-w-[420px] shadow-2xl animate-in zoom-in-50 duration-300">
-          <div className="flex justify-center mb-4">
-            <CheckCircle2 size={80} className="text-green-500 animate-bounce" />
+        <div className="bg-white p-10 rounded-[40px] text-center max-w-sm w-full shadow-2xl animate-in zoom-in-90">
+          <div className="w-24 h-24 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle2 size={48} />
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-800 mb-2">
-            บันทึกเรียบร้อย
-          </h2>
-          <p className="text-slate-500">
-            ข้อมูลผู้เข้าใช้งานสนามถูกจัดเก็บในระบบแล้ว
-          </p>
+          <h3 className="text-2xl font-black text-slate-800">สำเร็จ!</h3>
+          <p className="text-slate-500 mt-2">บันทึกสถิติสนามเรียบร้อยแล้ว</p>
         </div>
       </div>
     </div>
