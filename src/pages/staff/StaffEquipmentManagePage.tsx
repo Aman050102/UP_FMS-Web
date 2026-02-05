@@ -58,8 +58,8 @@ export default function StaffEquipmentManagePage() {
       const method = editingId ? "PATCH" : "POST";
       // กำหนด URL ให้ตรงกับโครงสร้าง Hono Router
       const url = editingId
-        ? `${API}/api/staff/equipment/${editingId}/`
-        : `${API}/api/staff/equipment/`;
+        ? `${API}/api/staff/equipment/${editingId}`
+        : `${API}/api/staff/equipment`;
 
       const res = await fetch(url, {
         method,
@@ -77,8 +77,14 @@ export default function StaffEquipmentManagePage() {
         setEditingId(null);
         fetchList();
       } else {
-        const data = await res.json();
-        alert(data.error || "บันทึกไม่สำเร็จ");
+        let errorMsg = "บันทึกไม่สำเร็จ";
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch (e) {
+
+        }
+        alert(errorMsg);
       }
     } catch (e) {
       alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
@@ -91,7 +97,7 @@ export default function StaffEquipmentManagePage() {
   const deleteItem = async (id: number) => {
     if (!confirm("ยืนยันการลบอุปกรณ์นี้ออกจากระบบ?")) return;
     try {
-      const res = await fetch(`${API}/api/staff/equipment/${id}/`, {
+      const res = await fetch(`${API}/api/staff/equipment/${id}`, {
         method: "DELETE",
       });
       if (res.ok) {
@@ -174,11 +180,10 @@ export default function StaffEquipmentManagePage() {
               </div>
               <div className="flex-[1.5] flex gap-2 w-full">
                 <button
-                  className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${
-                    editingId
+                  className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${editingId
                       ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
                       : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
-                  }`}
+                    }`}
                   onClick={handleSave}
                   disabled={loading}
                 >
