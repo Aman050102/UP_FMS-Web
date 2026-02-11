@@ -11,6 +11,7 @@ import StaffDocumentManagement from "./pages/staff/StaffDocumentManagement";
 import CheckinReportPage from "./pages/staff/CheckinReportPage";
 import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
 import StaffBookingManage from "./pages/staff/StaffBookingManage";
+import Notification from "./pages/staff/Notification";
 
 // User Pages
 import UserMenu from "./pages/users/UserMenu";
@@ -47,7 +48,7 @@ export default function App() {
           path="/staff/booking-manage"
           element={<StaffBookingManage />}
         />{" "}
-        {/* จัดการการจองและพิมพ์ PDF */}
+        <Route path="/staff/notifications" element={<Notification />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />

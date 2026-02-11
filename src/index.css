@@ -3,6 +3,7 @@
 
 /* 2. Import Tailwind v4 */
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
 
 /* 3. การตั้งค่า Theme */
 @theme {
