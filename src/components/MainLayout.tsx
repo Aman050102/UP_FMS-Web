@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import HeaderUser from "./HeaderUser";
-import HeaderStaff from "./HeaderStaff";
+import HeaderUser from "./MainHeader";
+import HeaderStaff from "./MainHeader";
 import SidebarUser from "./SidebarUser";
 import SidebarStaff from "./SidebarStaff";
 
