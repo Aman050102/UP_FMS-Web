@@ -13,11 +13,14 @@ import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
 import StaffBookingManage from "./pages/staff/StaffBookingManage";
 import Notification from "./pages/staff/Notification";
 
+// Student assistant Pages
+import AssistantMenu from "./pages/assistant/AssistantMenu";
+import CheckinPage from "./pages/assistant/CheckinPage";
+import EquipmentPage from "./pages/assistant/EquipmentPage";
+import CheckinFeedback from "./pages/assistant/CheckinFeedback";
+
 // User Pages
-import UserMenu from "./pages/users/UserMenu";
-import CheckinPage from "./pages/users/CheckinPage";
-import EquipmentPage from "./pages/users/EquipmentPage";
-import CheckinFeedback from "./pages/users/CheckinFeedback";
+import UserMenu from "./pages/user/UserMenu";
 
 export default function App() {
   return (
@@ -25,12 +28,17 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* กลุ่มหน้าสำหรับนิสิต */}
+      {/* กลุ่มหน้าสำหรับนิสิตทั่วไป */}
       <Route element={<MainLayout role="user" />}>
         <Route path="/user/menu" element={<UserMenu />} />
-        <Route path="/checkin" element={<CheckinPage />} />
-        <Route path="/equipment" element={<EquipmentPage />} />
-        <Route path="/checkin_feedback" element={<CheckinFeedback />} />
+      </Route>
+
+      {/* กลุ่มหน้าสำหรับนิสิตช่วยงาน (SA) - เปลี่ยน role เป็น assistant */}
+      <Route element={<MainLayout role="assistant" />}>
+        <Route path="/assistant/menu" element={<AssistantMenu />} />
+        <Route path="/assistant/checkin" element={<CheckinPage />} />
+        <Route path="/assistant/equipment" element={<EquipmentPage />} />
+        <Route path="/assistant/checkin_feedback" element={<CheckinFeedback />} />
       </Route>
 
       {/* กลุ่มหน้าสำหรับเจ้าหน้าที่ */}
@@ -38,16 +46,10 @@ export default function App() {
         <Route path="/staff/menu" element={<StaffMenu />} />
         <Route path="/staff/dashboard" element={<CheckinReportPage />} />
         <Route path="/staff/equipment" element={<StaffEquipmentManagePage />} />
-        <Route
-          path="/staff/borrow-ledger"
-          element={<StaffBorrowLedgerPage />}
-        />
+        <Route path="/staff/borrow-ledger" element={<StaffBorrowLedgerPage />} />
         <Route path="/staff/document-management" element={<StaffDocumentManagement />} />
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
-        <Route
-          path="/staff/booking-manage"
-          element={<StaffBookingManage />}
-        />{" "}
+        <Route path="/staff/booking-manage" element={<StaffBookingManage />} />
         <Route path="/staff/notifications" element={<Notification />} />
       </Route>
 
