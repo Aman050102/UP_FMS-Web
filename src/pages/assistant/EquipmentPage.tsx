@@ -107,8 +107,6 @@ export default function EquipmentPage() {
 
     try {
       for (const item of borrowItems) {
-        // หากเป็นโหมด Backdate เราจะส่ง Flag: skip_stock_update ไปด้วย
-        // (เพื่อให้ API ฝั่ง Server รู้ว่าไม่ต้องไปลบค่าใน Table Stock)
         await fetch(`${API}/api/equipment/borrow`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -119,12 +117,12 @@ export default function EquipmentPage() {
             equipment: item.name,
             qty: item.qty,
             borrow_date: isBackdate ? backdateValue : null,
-            is_backdate: isBackdate, // ส่ง flag บอก API ว่านี่คือการบันทึกย้อนหลัง
-            skip_stock_update: isBackdate // ส่ง flag เพื่อบอกไม่ให้กระทบสต็อก
+            is_backdate: isBackdate,
+            skip_stock_update: isBackdate
           }),
         });
       }
-      alert(isBackdate ? "บันทึกสถิติย้อนหลังสำเร็จ (ไม่กระทบสต็อกปัจจุบัน)" : "ยืมอุปกรณ์สำเร็จ");
+      alert(isBackdate ? "บันทึกสถิติย้อนหลังสำเร็จ" : "ยืมอุปกรณ์สำเร็จ");
       setBorrowItems([]);
       setStudentInfo({ id: "", name: "", faculty: "", phone: "" });
       setIsBackdate(false);
@@ -166,13 +164,10 @@ export default function EquipmentPage() {
 
     if (exist) {
       const newQty = exist.qty + delta;
-      // ในโหมดปกติ ตรวจสต็อก แต่ถ้าโหมด Backdate (สถิติ) ให้เพิ่มลดได้อิสระ ไม่ต้องสนสต็อก
       if (!isBackdate && newQty > (stockItem?.stock || 0) && delta > 0) return alert("สินค้าในสต็อกไม่พอ");
-
       if (newQty <= 0) setBorrowItems(borrowItems.filter((i) => i.name !== itemName));
       else setBorrowItems(borrowItems.map((i) => (i.name === itemName ? { ...i, qty: newQty } : i)));
     } else if (delta > 0) {
-      // ในโหมดปกติ ถ้าสต็อก 0 ห้ามเพิ่ม แต่ถ้า Backdate ให้เพิ่มได้เลย
       if (!isBackdate && (stockItem?.stock || 0) <= 0) return alert("สินค้าหมด");
       setBorrowItems([...borrowItems, { name: itemName, qty: 1 }]);
     }
@@ -303,7 +298,6 @@ export default function EquipmentPage() {
           </div>
         )}
 
-        {/* --- ส่วน Return และ History คงเดิม --- */}
         {activeTab === "return" && (
           <div className="space-y-3 animate-in fade-in duration-300">
             {pendingReturns.length === 0 ? (

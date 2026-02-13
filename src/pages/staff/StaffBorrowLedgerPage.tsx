@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from "chart.js";
 import { Doughnut, Bar } from "react-chartjs-2";
-import { Search, Calendar, Package, Clock, CheckCircle2, TrendingUp, Filter, BarChart3, PieChart } from "lucide-react";
+import { Search, Calendar, Package, Clock, TrendingUp, Filter, BarChart3, PieChart } from "lucide-react";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -24,12 +24,9 @@ export default function StaffBorrowReportPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ from: dateFrom, to: dateTo });
-
-      // 1. ดึงสถิติสรุปสำหรับกราฟ
       const statsRes = await fetch(`${API}/api/equipment/stats?${params}`);
       const statsData = await statsRes.json();
 
-      // 2. ดึงประวัติรายการละเอียดตามช่วงเวลา
       const historyRes = await fetch(`${API}/api/equipment/history-range?${params}`);
       const historyData = await historyRes.json();
 
@@ -50,7 +47,7 @@ export default function StaffBorrowReportPage() {
   useEffect(() => { fetchData(); }, [dateFrom, dateTo]);
 
   const filteredRecords = useMemo(() => {
-    return records.filter((r) => r.student_id?.toLowerCase().includes(studentSearch.toLowerCase()));
+    return records.filter((r) => (r.student_id || "").toLowerCase().includes(studentSearch.toLowerCase()));
   }, [records, studentSearch]);
 
   const chartData = {
@@ -65,7 +62,6 @@ export default function StaffBorrowReportPage() {
 
   return (
     <main className="min-h-screen bg-[#F8FAFC] font-kanit p-4 md:p-8 space-y-6">
-      {/* Filters */}
       <section className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
         <div className="flex flex-wrap gap-4 items-end">
           <div className="flex-1 min-w-[300px] grid grid-cols-2 gap-3">
@@ -88,7 +84,6 @@ export default function StaffBorrowReportPage() {
         </div>
       </section>
 
-      {/* Stats Cards & Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 p-8 shadow-sm relative min-h-[400px]">
           <div className="flex justify-between items-center mb-6">
@@ -124,10 +119,9 @@ export default function StaffBorrowReportPage() {
         </div>
       </div>
 
-      {/* History Table */}
       <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="font-bold text-slate-800 flex items-center gap-2"><Clock size={18} /> ประวัติการทำรายการในช่วงวันที่เลือก</h3>
+          <h3 className="font-bold text-slate-800 flex items-center gap-2"><Clock size={18} /> ประวัติการทำรายการ</h3>
           <span className="text-[10px] font-bold bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full uppercase">{filteredRecords.length} รายการ</span>
         </div>
         <div className="overflow-x-auto">
@@ -144,7 +138,9 @@ export default function StaffBorrowReportPage() {
             <tbody className="divide-y divide-slate-50">
               {filteredRecords.map((r, i) => (
                 <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="p-4 text-slate-400">{r.created_at?.slice(0, 16).replace('T', ' ')}</td>
+                  <td className="p-4 text-slate-400">
+                    {r.created_at ? new Date(r.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '-'}
+                  </td>
                   <td className="p-4 font-bold text-slate-700">{r.student_id} <small className="block font-normal text-slate-400 text-[10px]">{r.faculty}</small></td>
                   <td className="p-4 font-medium">{r.equipment}</td>
                   <td className="p-4 text-center">
