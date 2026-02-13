@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   MessageSquare,
   Calendar,
@@ -10,6 +10,7 @@ import {
   Image as ImageIcon,
   ChevronRight,
   ClipboardCheck,
+  Search,
 } from "lucide-react";
 
 interface FeedbackItem {
@@ -31,6 +32,7 @@ const FACILITY_NAMES: Record<string, string> = {
 export default function StaffFeedbackView() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [filter, setFilter] = useState("all");
+  const [searchDate, setSearchDate] = useState(""); // เก็บค่าวันที่ที่ค้นหา (YYYY-MM-DD)
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -58,47 +60,83 @@ export default function StaffFeedbackView() {
     fetchFeedbacks();
   }, []);
 
-  const filteredData =
-    filter === "all"
-      ? feedbacks
-      : feedbacks.filter((item) => item.facility === filter);
+  // กรองข้อมูลตามสถานที่ และ วันที่
+  const filteredData = useMemo(() => {
+    return feedbacks.filter((item) => {
+      // เงื่อนไขสถานที่
+      const matchFacility = filter === "all" || item.facility === filter;
+
+      // เงื่อนไขวันที่ (ตัดเอาเฉพาะ YYYY-MM-DD จาก ISO string มาเทียบ)
+      const itemDate = item.created_at.split("T")[0];
+      const matchDate = searchDate === "" || itemDate === searchDate;
+
+      return matchFacility && matchDate;
+    });
+  }, [feedbacks, filter, searchDate]);
 
   return (
     <div className="min-h-screen bg-[#f8fafc] font-kanit p-6 md:p-10 animate-in fade-in duration-700">
       <div className="max-w-[1200px] mx-auto space-y-6">
+
         {/* 1. Official Header */}
-        <header className="flex flex-col md:flex-row justify-between items-end border-b border-slate-200 pb-8 gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
-              <ClipboardCheck className="text-primary" size={28} />
-              บันทึกข้อร้องเรียนและรายงานการใช้งาน
-            </h1>
-            <p className="text-slate-500 text-sm font-medium">
-              ส่วนตรวจสอบหลักฐานภาพถ่ายและความคิดเห็นจากผู้ใช้บริการ
-            </p>
+        <header className="flex flex-col gap-6 border-b border-slate-200 pb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
+                <ClipboardCheck className="text-primary" size={28} />
+                บันทึกข้อร้องเรียนและรายงานการใช้งาน
+              </h1>
+              <p className="text-slate-500 text-sm font-medium">
+                ส่วนตรวจสอบหลักฐานภาพถ่ายและความคิดเห็นจากผู้ใช้บริการ
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
-            <div className="px-3 text-slate-400 border-r border-slate-100">
-              <Filter size={14} />
+          {/* ฟิลเตอร์ควบคุม */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* กรองตามสถานที่ */}
+            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
+              <div className="px-3 text-slate-400 border-r border-slate-100">
+                <Filter size={14} />
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {Object.entries(FACILITY_NAMES).map(([key, name]) => (
+                  <button
+                    key={key}
+                    onClick={() => setFilter(key)}
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${filter === key
+                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                        : "text-slate-500 hover:text-primary hover:bg-slate-50"
+                      }`}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
             </div>
-            {Object.entries(FACILITY_NAMES).map(([key, name]) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  filter === key
-                    ? "bg-primary text-white shadow-md shadow-primary/20"
-                    : "text-slate-500 hover:text-primary hover:bg-slate-50"
-                }`}
-              >
-                {name}
-              </button>
-            ))}
+
+            {/* ค้นหาตามวันที่ */}
+            <div className="flex items-center gap-2 bg-white p-1.5 px-3 rounded-xl border border-slate-200 shadow-sm min-w-[200px]">
+              <Calendar size={16} className="text-slate-400" />
+              <input
+                type="date"
+                className="bg-transparent border-none outline-none text-xs font-bold text-slate-600 cursor-pointer w-full"
+                value={searchDate}
+                onChange={(e) => setSearchDate(e.target.value)}
+              />
+              {searchDate && (
+                <button
+                  onClick={() => setSearchDate("")}
+                  className="text-slate-300 hover:text-red-500 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
           </div>
         </header>
 
-        {/* 2. List Content - ปรับเป็น List View กึ่ง Table ให้ดูทางการ */}
+        {/* 2. List Content */}
         {loading ? (
           <div className="text-center py-24 text-slate-400 font-bold animate-pulse">
             กำลังเรียกข้อมูลเอกสาร...
@@ -107,8 +145,16 @@ export default function StaffFeedbackView() {
           <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-200 shadow-sm">
             <Inbox size={48} className="text-slate-200 mb-4" />
             <h3 className="text-lg font-bold text-slate-400">
-              ไม่พบรายการบันทึก
+              ไม่พบรายการบันทึก {searchDate && `ในวันที่ ${new Date(searchDate).toLocaleDateString('th-TH')}`}
             </h3>
+            {searchDate && (
+              <button
+                onClick={() => setSearchDate("")}
+                className="mt-4 text-primary text-sm font-bold hover:underline"
+              >
+                ล้างการค้นหาตามวันที่
+              </button>
+            )}
           </div>
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -196,7 +242,7 @@ export default function StaffFeedbackView() {
         )}
       </div>
 
-      {/* Modal - ปรับพื้นหลังให้ดูหรูขึ้น */}
+      {/* Modal */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-slate-900/90 backdrop-blur-sm z-[2000] flex items-center justify-center p-8 animate-in fade-in duration-300"
