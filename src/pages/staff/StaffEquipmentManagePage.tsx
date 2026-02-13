@@ -11,7 +11,6 @@ import {
   ListFilter,
 } from "lucide-react";
 
-// กำหนด URL ของ API จาก Environment หรือค่า Default
 const API = (
   import.meta.env.VITE_API_BASE_URL ||
   "https://up-fms-api-hono.aman02012548.workers.dev"
@@ -24,19 +23,14 @@ export default function StaffEquipmentManagePage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // ดึงรายการอุปกรณ์ทั้งหมดจากระบบ
   const fetchList = async () => {
     try {
-      // ตรวจสอบว่า API URL ของคุณไม่มี / ปิดท้าย และเรียกไปที่ /stock
       const res = await fetch(`${API}/api/staff/equipment/stock`);
-
-      // ตรวจสอบสถานะก่อนแปลงเป็น JSON
       if (!res.ok) {
         const errorText = await res.text();
         console.error("Server Error:", errorText);
         return;
       }
-
       const data = await res.json();
       if (data.ok) setItems(data.equipments);
     } catch (e) {
@@ -48,16 +42,15 @@ export default function StaffEquipmentManagePage() {
     fetchList();
   }, []);
 
-  // ฟังก์ชันบันทึกข้อมูล (ทั้งเพิ่มใหม่และแก้ไข)
   const handleSave = async () => {
-    if (!equipName) return alert("กรุณาระบุชื่ออุปกรณ์");
+    if (!equipName.trim()) return alert("กรุณาระบุชื่ออุปกรณ์");
     if (parseInt(equipStock) < 0) return alert("จำนวนสต็อกต้องไม่ติดลบ");
 
     setLoading(true);
     try {
-      const method = editingId ? "PATCH" : "POST";
-      // กำหนด URL ให้ตรงกับโครงสร้าง Hono Router
-      const url = editingId
+      const isEdit = editingId !== null;
+      const method = isEdit ? "PATCH" : "POST";
+      const url = isEdit
         ? `${API}/api/staff/equipment/${editingId}`
         : `${API}/api/staff/equipment`;
 
@@ -65,26 +58,24 @@ export default function StaffEquipmentManagePage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: equipName,
+          name: equipName.trim(),
           stock: parseInt(equipStock),
           total: parseInt(equipStock),
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
+        if (!isEdit && data.message) {
+          alert(data.message); // แจ้งเตือนกรณีชื่อซ้ำแล้วเป็นการบวกยอด
+        }
         setEquipName("");
         setEquipStock("10");
         setEditingId(null);
         fetchList();
       } else {
-        let errorMsg = "บันทึกไม่สำเร็จ";
-        try {
-          const data = await res.json();
-          errorMsg = data.error || errorMsg;
-        } catch (e) {
-
-        }
-        alert(errorMsg);
+        alert(data.error || "บันทึกไม่สำเร็จ");
       }
     } catch (e) {
       alert("เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์");
@@ -93,7 +84,6 @@ export default function StaffEquipmentManagePage() {
     }
   };
 
-  // ฟังก์ชันลบอุปกรณ์
   const deleteItem = async (id: number) => {
     if (!confirm("ยืนยันการลบอุปกรณ์นี้ออกจากระบบ?")) return;
     try {
@@ -112,7 +102,6 @@ export default function StaffEquipmentManagePage() {
 
   return (
     <div className="max-w-[1200px] mx-auto p-6 font-kanit animate-in fade-in duration-700">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-primary/10 rounded-xl">
@@ -137,7 +126,6 @@ export default function StaffEquipmentManagePage() {
       </div>
 
       <div className="space-y-6">
-        {/* 1. Form Section (Top Panel) */}
         <section
           className={`border transition-all duration-300 rounded-[24px] shadow-sm overflow-hidden ${editingId ? "bg-orange-50/30 border-orange-200" : "bg-white border-gray-200"}`}
         >
@@ -181,8 +169,8 @@ export default function StaffEquipmentManagePage() {
               <div className="flex-[1.5] flex gap-2 w-full">
                 <button
                   className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${editingId
-                      ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
-                      : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
+                    ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
+                    : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
                     }`}
                   onClick={handleSave}
                   disabled={loading}
@@ -214,7 +202,6 @@ export default function StaffEquipmentManagePage() {
           </div>
         </section>
 
-        {/* 2. Inventory Grid Section */}
         <section className="bg-white border border-gray-200 rounded-[24px] shadow-sm overflow-hidden">
           <div className="bg-gray-50/50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
             <div className="flex items-center gap-2">
