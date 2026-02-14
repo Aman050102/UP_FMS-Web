@@ -68,7 +68,6 @@ export default function StaffMenu() {
             <p className="text-[1.1rem] text-text-muted">
               ยินดีต้อนรับคุณ{" "}
               <span className="text-primary font-bold">{displayName}</span>{" "}
-              (Staff)
             </p>
           </header>
 

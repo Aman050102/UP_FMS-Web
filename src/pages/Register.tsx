@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Eye, EyeOff, UserPlus, ArrowLeft, ShieldCheck, XCircle, Send } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, ShieldCheck, XCircle, Send } from "lucide-react";
 import dsaLogo from "../assets/dsa.png";
 
 const API = (import.meta.env.VITE_API_BASE_URL || "http://localhost:8787").replace(/\/$/, "");
@@ -49,7 +49,6 @@ export default function Register() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      // สลับไปหน้ากรอก OTP หลังตรวจสอบผ่าน
       setStep("otp");
     } catch (err: any) {
       setError(err.message);
@@ -83,14 +82,14 @@ export default function Register() {
     return (
       <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-6 font-kanit">
         <div className="w-full max-w-[450px] bg-white rounded-[28px] p-10 text-center shadow-2xl animate-in zoom-in-95">
-          <Send size={50} className="mx-auto text-primary mb-4 animate-bounce" />
+          <Send size={50} className="mx-auto text-[#ec4899] mb-4 animate-bounce" />
           <h2 className="text-2xl font-bold text-[#2b2346] mb-2">ยืนยันอีเมลของคุณ</h2>
           <p className="text-sm text-slate-500 mb-8">เราส่งรหัส OTP 6 หลักไปที่อีเมล {email} แล้ว</p>
           <input
             type="text"
             maxLength={6}
             placeholder="000000"
-            className="w-full text-center text-4xl tracking-[1rem] font-bold pb-4 border-b-2 border-primary outline-none"
+            className="w-full text-center text-4xl tracking-[1rem] font-bold pb-4 border-b-2 border-[#ec4899] outline-none text-[#ec4899]"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
           />
@@ -98,7 +97,7 @@ export default function Register() {
           <button
             onClick={onConfirmRegister}
             disabled={loading}
-            className="w-full py-4 mt-8 bg-primary text-white rounded-full font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-4 mt-8 bg-gradient-to-r from-[#06b6d4] to-[#ec4899] text-white rounded-full font-bold shadow-lg hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? "กำลังบันทึก..." : "ยืนยันการลงทะเบียน"}
           </button>
@@ -113,32 +112,62 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-4 md:p-8 font-kanit">
       <div className="w-full max-w-[720px] bg-white rounded-[28px] p-8 md:p-10 shadow-2xl">
-        <div className="flex justify-center mb-4"><img src={dsaLogo} className="w-full max-w-[500px] h-[110px] object-contain" /></div>
+        <div className="flex justify-center mb-4">
+          <img src={dsaLogo} className="w-full max-w-[500px] h-[110px] object-contain" />
+        </div>
         <div className="text-center space-y-1 mb-6">
           <h1 className="text-xl md:text-2xl font-bold text-[#2b2346]">สร้างบัญชีผู้ใช้งานใหม่</h1>
-          <p className="text-sm text-[#8b86a4]">UP-FMS | ระบบสนามกีฬาความปลอดภัยสูง</p>
+          <p className="text-sm text-[#8b86a4]">UP-FMS | กองกิจการนิสิต มหาวิทยาลัยพะเยา</p>
         </div>
         <form className="space-y-5" onSubmit={onRegisterRequest}>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-bold text-[#2b2346]">ชื่อ-นามสกุล / Full Name</label>
-            <input className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            <input
+              className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+            />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-[#2b2346]">อีเมล</label>
-              <input type="email" className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input
+                type="email"
+                className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-[#2b2346]">ชื่อผู้ใช้ (Username)</label>
-              <input className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <input
+                className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5 relative">
               <label className="text-sm font-bold text-[#2b2346]">รหัสผ่าน (12-16 ตัว + สัญลักษณ์)</label>
               <div className="relative">
-                <input type={showPw ? "text" : "password"} className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] pr-10" value={pw} onChange={(e) => setPw(e.target.value)} required />
-                <button type="button" className="absolute right-0 bottom-2 text-[#7c7894]" onClick={() => setShowPw(!showPw)}>{showPw ? <EyeOff size={20} /> : <Eye size={20} />}</button>
+                <input
+                  type={showPw ? "text" : "password"}
+                  className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899] pr-10"
+                  value={pw}
+                  onChange={(e) => setPw(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="absolute right-0 bottom-2 text-[#7c7894]"
+                  onClick={() => setShowPw(!showPw)}
+                >
+                  {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-1 mt-2 p-3 bg-slate-50 rounded-xl text-[10px]">
                 <PolicyItem label="12-16 ตัวอักษร" valid={strength.len} />
@@ -150,16 +179,32 @@ export default function Register() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-bold text-[#2b2346]">ยืนยันรหัสผ่าน</label>
-              <input type="password" className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]" value={pw2} onChange={(e) => setPw2(e.target.value)} required />
+              <input
+                type="password"
+                className="w-full py-2 border-b border-[#d4d0e0] outline-none focus:border-[#ec4899]"
+                value={pw2}
+                onChange={(e) => setPw2(e.target.value)}
+                required
+              />
             </div>
           </div>
           {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
           {ok && <p className="text-sm text-green-600 font-bold bg-green-50 p-3 rounded-lg border border-green-100">{ok}</p>}
           <div className="pt-2 space-y-4">
-            <button type="submit" disabled={!isStrong || loading} className="w-full py-3 bg-gradient-to-r from-[#06b6d4] to-[#ec4899] text-white font-bold rounded-full shadow-lg disabled:opacity-50 transition-all">
-              {loading ? "กำลังส่งข้อมูล..." : "ลงทะเบียนและรับรหัส OTP"}
+            <button
+              type="submit"
+              disabled={!isStrong || loading}
+              className="w-full py-3 bg-gradient-to-r from-[#06b6d4] to-[#ec4899] text-white font-bold rounded-full shadow-lg disabled:opacity-50 transition-all"
+            >
+              {loading ? "กำลังส่งข้อมูล..." : "ลงทะเบียน"}
             </button>
-            <button type="button" className="w-full py-3 bg-gray-100 text-slate-500 font-bold rounded-full transition-all" onClick={() => (window.location.href = "/login")}><ArrowLeft size={20} className="inline mr-2" /> กลับไปหน้าล็อกอิน</button>
+            <button
+              type="button"
+              className="w-full py-3 bg-gray-100 text-slate-500 font-bold rounded-full transition-all"
+              onClick={() => (window.location.href = "/login")}
+            >
+              <ArrowLeft size={20} className="inline mr-2" /> กลับไปหน้าล็อกอิน
+            </button>
           </div>
         </form>
       </div>

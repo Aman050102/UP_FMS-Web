@@ -8,7 +8,7 @@ import dsaLogo from "../assets/dsa.png";
 export default function MainHeader({ displayName, onToggleMenu, role }: any) {
   const navigate = useNavigate();
   const [showProfile, setShowProfile] = useState(false);
-  const userEmail = localStorage.getItem("userEmail") || "user@up.ac.th";
+  const userEmail = localStorage.getItem("userEmail") ;
 
   const isStaffOrAdmin = role === "staff" || role === "admin";
 
@@ -73,7 +73,7 @@ export default function MainHeader({ displayName, onToggleMenu, role }: any) {
 
               <div className="p-1">
                 <button className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 text-gray-600 rounded-lg">
-                  <Settings size={18} className="text-gray-400" /><span className="text-[14px]">การตั้งค่า</span>
+                  <Settings size={18} className="text-gray-400" /><span className="text-[14px]">จัดการโปรไฟล์</span>
                 </button>
                 <button className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-50 text-red-500 rounded-lg font-bold"
                   onClick={() => { localStorage.clear(); window.location.href = "/login"; }}>
