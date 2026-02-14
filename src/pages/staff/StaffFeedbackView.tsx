@@ -32,7 +32,7 @@ const FACILITY_NAMES: Record<string, string> = {
 export default function StaffFeedbackView() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [filter, setFilter] = useState("all");
-  const [searchDate, setSearchDate] = useState(""); // เก็บค่าวันที่ที่ค้นหา (YYYY-MM-DD)
+  const [searchDate, setSearchDate] = useState(""); 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

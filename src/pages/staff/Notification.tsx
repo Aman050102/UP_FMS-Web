@@ -27,7 +27,7 @@ interface Collaborator {
 
 export default function Notification() {
   const [activeTab, setActiveTab] = useState<"notify" | "access">("notify");
-  const [currentUser] = useState({ role: "admin" }); // จำลองว่าเราเป็น Admin
+  const [currentUser] = useState({ role: "admin" }); 
 
   // --- State สำหรับระบบแจ้งเตือน ---
   const [notifications, setNotifications] = useState<NotificationItem[]>([
