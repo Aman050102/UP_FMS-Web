@@ -68,11 +68,6 @@ This project aims to develop the **Sports Facility Usage Tracking and Analytics 
 
 ---
 
-## 📊 Use Case Diagram
-![Use Case Diagram](URL_TO_YOUR_IMAGE)
-
----
-
 ## 🔗 Related Links
 * **Project Timeline:** [View Details](https://go.up.ac.th/ProjectProposal)
 * **Full Project Proposal:** [Google Docs](https://docs.google.com/document/d/1rTQ1rN4tszsr7FOltisGMmMRjhOD2is02SgBCYCVFtk/edit?usp=sharing)
