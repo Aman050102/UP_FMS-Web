@@ -7,7 +7,6 @@ export default function FacilityBooking() {
   return (
     <div className="min-h-screen bg-[#f8fafc] font-kanit flex items-center justify-center p-6 animate-in fade-in duration-700">
       <div className="max-w-md w-full bg-white rounded-[2.5rem] p-10 text-center shadow-2xl border border-slate-100 relative overflow-hidden">
-
         {/* ตกแต่งพื้นหลังเล็กน้อย */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#5f5aa2] to-[#ec4899]"></div>
 
@@ -33,7 +32,10 @@ export default function FacilityBooking() {
 
         <p className="text-slate-500 leading-relaxed mb-10">
           ขออภัยในความไม่สะดวก <br />
-          <span className="font-medium text-slate-600">"ขณะนี้ระบบกำลังอยู่ในระหว่างการพัฒนา"</span> <br />
+          <span className="font-medium text-slate-600">
+            "ขณะนี้ระบบกำลังอยู่ในระหว่างการพัฒนา"
+          </span>{" "}
+          <br />
           เพื่อให้รองรับการใช้งานที่สะดวกและรวดเร็วที่สุดสำหรับนิสิตและบุคลากร
         </p>
 

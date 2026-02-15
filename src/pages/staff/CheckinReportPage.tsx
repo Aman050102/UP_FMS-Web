@@ -30,7 +30,7 @@ ChartJS.register(
   BarElement,
   PointElement,
   LineElement,
-  Filler
+  Filler,
 );
 
 interface CheckinRow {
@@ -55,11 +55,15 @@ export default function CheckinReportPage() {
   // State
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
   });
   const [dateTo, setDateTo] = useState(() => {
     const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split("T")[0];
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
   });
   const [facilityFilter, setFacilityFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"pie" | "bar" | "line">("pie");
@@ -89,7 +93,7 @@ export default function CheckinReportPage() {
             ...r,
             student_count: Number(r.student_count || 0),
             staff_count: Number(r.staff_count || 0),
-          }))
+          })),
         );
       } catch (err) {
         console.error("Failed to fetch data", err);
@@ -105,7 +109,7 @@ export default function CheckinReportPage() {
     return rows.filter(
       (r) =>
         FAC_NAME[r.facility]?.includes(searchQuery) ||
-        r.sub_facility?.toLowerCase().includes(searchQuery.toLowerCase())
+        r.sub_facility?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [rows, searchQuery]);
 
@@ -125,26 +129,34 @@ export default function CheckinReportPage() {
   // Chart Data Configuration
   const chartData = useMemo(() => {
     const labels = Object.values(FAC_NAME);
-    const dataValues = [summary.outdoor, summary.badminton, summary.pool, summary.track];
+    const dataValues = [
+      summary.outdoor,
+      summary.badminton,
+      summary.pool,
+      summary.track,
+    ];
     const colors = ["#2e7d32", "#1565c0", "#0f766e", "#ef6c00"];
 
     if (viewMode === "line") {
       // สำหรับ Line Chart แสดงแนวโน้มรายวัน (Group by date)
       const dateMap: Record<string, number> = {};
-      rows.forEach(r => {
-        dateMap[r.session_date] = (dateMap[r.session_date] || 0) + (r.student_count + r.staff_count);
+      rows.forEach((r) => {
+        dateMap[r.session_date] =
+          (dateMap[r.session_date] || 0) + (r.student_count + r.staff_count);
       });
       const sortedDates = Object.keys(dateMap).sort();
       return {
         labels: sortedDates,
-        datasets: [{
-          label: "จำนวนผู้ใช้รวม",
-          data: sortedDates.map(d => dateMap[d]),
-          borderColor: "#5D4B9C",
-          backgroundColor: "rgba(93, 75, 156, 0.1)",
-          fill: true,
-          tension: 0.4,
-        }]
+        datasets: [
+          {
+            label: "จำนวนผู้ใช้รวม",
+            data: sortedDates.map((d) => dateMap[d]),
+            borderColor: "#5D4B9C",
+            backgroundColor: "rgba(93, 75, 156, 0.1)",
+            fill: true,
+            tension: 0.4,
+          },
+        ],
       };
     }
 
@@ -211,20 +223,24 @@ export default function CheckinReportPage() {
               {(["pie", "bar", "line"] as const).map((mode) => (
                 <button
                   key={mode}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === mode ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-800"
-                    }`}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    viewMode === mode
+                      ? "bg-white text-indigo-600 shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
                   onClick={() => setViewMode(mode)}
                 >
                   {mode === "pie" ? "วงกลม" : mode === "bar" ? "แท่ง" : "เส้น"}
                 </button>
               ))}
             </div>
-
           </div>
 
           <div className="w-full max-w-[500px] min-h-[300px] relative flex items-center justify-center">
             {isLoading ? (
-              <div className="animate-pulse text-slate-300 font-bold">กำลังโหลดข้อมูล...</div>
+              <div className="animate-pulse text-slate-300 font-bold">
+                กำลังโหลดข้อมูล...
+              </div>
             ) : (
               <>
                 {viewMode === "pie" && (
@@ -237,12 +253,21 @@ export default function CheckinReportPage() {
                       }}
                     />
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-10">
-                      <span className="text-5xl font-black text-slate-800">{summary.total.toLocaleString()}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Users</span>
+                      <span className="text-5xl font-black text-slate-800">
+                        {summary.total.toLocaleString()}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        Total Users
+                      </span>
                     </div>
                   </div>
                 )}
-                {viewMode === "bar" && <Bar data={chartData} options={{ plugins: { legend: { display: false } } }} />}
+                {viewMode === "bar" && (
+                  <Bar
+                    data={chartData}
+                    options={{ plugins: { legend: { display: false } } }}
+                  />
+                )}
                 {viewMode === "line" && <Line data={chartData} />}
               </>
             )}
@@ -251,17 +276,26 @@ export default function CheckinReportPage() {
 
         <div className="space-y-6">
           <section className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-8 text-white shadow-xl shadow-indigo-200">
-            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">ยอดเข้าใช้สะสม</span>
+            <span className="text-sm font-bold opacity-80 uppercase tracking-widest">
+              ยอดเข้าใช้สะสม
+            </span>
             <div className="text-6xl font-black mt-2 leading-none">
               {summary.total.toLocaleString()}
             </div>
-            <p className="mt-4 text-xs opacity-70 font-medium">กองกิจการนิสิต มหาวิทยาลัยพะเยา</p>
+            <p className="mt-4 text-xs opacity-70 font-medium">
+              กองกิจการนิสิต มหาวิทยาลัยพะเยา
+            </p>
           </section>
 
           <section className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm grid grid-cols-2 gap-4">
             {Object.entries(FAC_NAME).map(([key, name]) => (
-              <div key={key} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-colors">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{name}</span>
+              <div
+                key={key}
+                className="p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-indigo-200 transition-colors"
+              >
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  {name}
+                </span>
                 <div className="text-2xl font-black text-indigo-600 group-hover:scale-110 transition-transform origin-left">
                   {(summary as any)[key].toLocaleString()}
                 </div>
@@ -275,7 +309,8 @@ export default function CheckinReportPage() {
       <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
           <h3 className="font-bold text-slate-800 flex items-center gap-2">
-            <TableIcon size={18} className="text-indigo-600" /> รายละเอียดข้อมูลดิบ
+            <TableIcon size={18} className="text-indigo-600" />{" "}
+            รายละเอียดข้อมูลดิบ
           </h3>
           <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
             {filteredRows.length} รายการ
@@ -297,18 +332,38 @@ export default function CheckinReportPage() {
             <tbody className="divide-y divide-slate-50">
               {filteredRows.length > 0 ? (
                 filteredRows.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="p-4 font-medium text-slate-600">{r.session_date}</td>
-                    <td className="p-4 font-bold text-indigo-600">{FAC_NAME[r.facility] || r.facility}</td>
-                    <td className="p-4 text-slate-500">{r.sub_facility || "-"}</td>
-                    <td className="p-4 text-center font-bold text-slate-700">{r.student_count}</td>
-                    <td className="p-4 text-center font-bold text-slate-700">{r.staff_count}</td>
-                    <td className="p-4 text-right font-black text-indigo-600">{r.student_count + r.staff_count}</td>
+                  <tr
+                    key={r.id}
+                    className="hover:bg-slate-50/80 transition-colors group"
+                  >
+                    <td className="p-4 font-medium text-slate-600">
+                      {r.session_date}
+                    </td>
+                    <td className="p-4 font-bold text-indigo-600">
+                      {FAC_NAME[r.facility] || r.facility}
+                    </td>
+                    <td className="p-4 text-slate-500">
+                      {r.sub_facility || "-"}
+                    </td>
+                    <td className="p-4 text-center font-bold text-slate-700">
+                      {r.student_count}
+                    </td>
+                    <td className="p-4 text-center font-bold text-slate-700">
+                      {r.staff_count}
+                    </td>
+                    <td className="p-4 text-right font-black text-indigo-600">
+                      {r.student_count + r.staff_count}
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-slate-400 font-medium">ไม่พบข้อมูลในช่วงเวลาที่เลือก</td>
+                  <td
+                    colSpan={6}
+                    className="p-10 text-center text-slate-400 font-medium"
+                  >
+                    ไม่พบข้อมูลในช่วงเวลาที่เลือก
+                  </td>
                 </tr>
               )}
             </tbody>

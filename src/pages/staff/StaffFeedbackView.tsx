@@ -32,7 +32,7 @@ const FACILITY_NAMES: Record<string, string> = {
 export default function StaffFeedbackView() {
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [filter, setFilter] = useState("all");
-  const [searchDate, setSearchDate] = useState(""); 
+  const [searchDate, setSearchDate] = useState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -77,7 +77,6 @@ export default function StaffFeedbackView() {
   return (
     <div className="min-h-screen bg-[#f8fafc] font-kanit p-6 md:p-10 animate-in fade-in duration-700">
       <div className="max-w-[1200px] mx-auto space-y-6">
-
         {/* 1. Official Header */}
         <header className="flex flex-col gap-6 border-b border-slate-200 pb-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
@@ -104,10 +103,11 @@ export default function StaffFeedbackView() {
                   <button
                     key={key}
                     onClick={() => setFilter(key)}
-                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${filter === key
+                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      filter === key
                         ? "bg-primary text-white shadow-md shadow-primary/20"
                         : "text-slate-500 hover:text-primary hover:bg-slate-50"
-                      }`}
+                    }`}
                   >
                     {name}
                   </button>
@@ -145,7 +145,9 @@ export default function StaffFeedbackView() {
           <div className="flex flex-col items-center justify-center py-32 bg-white rounded-3xl border border-slate-200 shadow-sm">
             <Inbox size={48} className="text-slate-200 mb-4" />
             <h3 className="text-lg font-bold text-slate-400">
-              ไม่พบรายการบันทึก {searchDate && `ในวันที่ ${new Date(searchDate).toLocaleDateString('th-TH')}`}
+              ไม่พบรายการบันทึก{" "}
+              {searchDate &&
+                `ในวันที่ ${new Date(searchDate).toLocaleDateString("th-TH")}`}
             </h3>
             {searchDate && (
               <button

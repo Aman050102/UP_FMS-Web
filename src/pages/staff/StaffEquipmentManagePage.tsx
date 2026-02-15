@@ -168,10 +168,11 @@ export default function StaffEquipmentManagePage() {
               </div>
               <div className="flex-[1.5] flex gap-2 w-full">
                 <button
-                  className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${editingId
-                    ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
-                    : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
-                    }`}
+                  className={`flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-primary/10 disabled:opacity-50 ${
+                    editingId
+                      ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-100"
+                      : "bg-primary hover:bg-primary-dark text-white shadow-primary/10"
+                  }`}
                   onClick={handleSave}
                   disabled={loading}
                 >

@@ -32,7 +32,7 @@ export default function CheckinFeedback() {
     const hasPermission = localStorage.getItem("file_access_permission");
     if (!hasPermission) {
       const isConfirm = window.confirm(
-        "ระบบต้องการขออนุญาตเข้าถึงกล้องหรือพื้นที่จัดเก็บรูปภาพ เพื่อแนบหลักฐานการใช้บริการสนามกีฬา ยืนยันเพื่อดำเนินการต่อ?"
+        "ระบบต้องการขออนุญาตเข้าถึงกล้องหรือพื้นที่จัดเก็บรูปภาพ เพื่อแนบหลักฐานการใช้บริการสนามกีฬา ยืนยันเพื่อดำเนินการต่อ?",
       );
       if (isConfirm) {
         localStorage.setItem("file_access_permission", "true");
@@ -80,7 +80,10 @@ export default function CheckinFeedback() {
       // ป้องกันกรณีไฟล์ใน input หลุดแต่ยังมีรูปโชว์อยู่
       const res = await fetch(imagePreview);
       const blob = await res.blob();
-      formData.append("file", new File([blob], "feedback_image.jpg", { type: "image/jpeg" }));
+      formData.append(
+        "file",
+        new File([blob], "feedback_image.jpg", { type: "image/jpeg" }),
+      );
     }
 
     formData.append("facility", facility);
@@ -192,7 +195,8 @@ export default function CheckinFeedback() {
                       className="absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110 cursor-pointer"
                       onClick={() => {
                         setImagePreview(null);
-                        if (fileInputRef.current) fileInputRef.current.value = "";
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
                       }}
                     >
                       <X size={20} />

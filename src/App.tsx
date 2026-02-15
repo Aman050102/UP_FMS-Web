@@ -31,7 +31,8 @@ import FacilityBooking from "./pages/user/FacilityBooking";
 
 export default function App() {
   // ดึงค่าสิทธิ์ปัจจุบันจากระบบมาใช้งานสำหรับ Layout ส่วนกลาง
-  const userRole = (localStorage.getItem("user_role")?.toLowerCase() || "user") as "user" | "staff" | "assistant" | "admin";
+  const userRole = (localStorage.getItem("user_role")?.toLowerCase() ||
+    "user") as "user" | "staff" | "assistant" | "admin";
 
   return (
     <Routes>
@@ -49,7 +50,10 @@ export default function App() {
         <Route path="/assistant/menu" element={<AssistantMenu />} />
         <Route path="/assistant/checkin" element={<CheckinPage />} />
         <Route path="/assistant/equipment" element={<EquipmentPage />} />
-        <Route path="/assistant/checkin_feedback" element={<CheckinFeedback />} />
+        <Route
+          path="/assistant/checkin_feedback"
+          element={<CheckinFeedback />}
+        />
       </Route>
 
       {/* กลุ่มหน้าสำหรับเจ้าหน้าที่/แอดมิน */}
@@ -57,8 +61,14 @@ export default function App() {
         <Route path="/staff/menu" element={<StaffMenu />} />
         <Route path="/staff/dashboard" element={<CheckinReportPage />} />
         <Route path="/staff/equipment" element={<StaffEquipmentManagePage />} />
-        <Route path="/staff/borrow-ledger" element={<StaffBorrowLedgerPage />} />
-        <Route path="/staff/document-management" element={<StaffDocumentManagement />} />
+        <Route
+          path="/staff/borrow-ledger"
+          element={<StaffBorrowLedgerPage />}
+        />
+        <Route
+          path="/staff/document-management"
+          element={<StaffDocumentManagement />}
+        />
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
         <Route path="/staff/booking-manage" element={<StaffBookingManage />} />
         <Route path="/staff/notifications" element={<Notification />} />
