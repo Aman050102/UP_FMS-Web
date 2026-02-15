@@ -67,5 +67,5 @@
 ---
 
 ## 🔗 ลิงก์ที่เกี่ยวข้อง 
-* **:** [คลิกเพื่อดูรายละเอียด](https://go.up.ac.th/ProjectProposal)
+* **Project Timeline:** [คลิกเพื่อดูรายละเอียด](https://go.up.ac.th/ProjectProposal)
 * **Project Proposal:** [คลิกเพื่อดูรายละเอียด](https://docs.google.com/document/d/1rTQ1rN4tszsr7FOltisGMmMRjhOD2is02SgBCYCVFtk/edit?usp=sharing)
