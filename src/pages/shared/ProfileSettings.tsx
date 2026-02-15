@@ -62,7 +62,7 @@ export default function ProfileSettings() {
   // ฟังก์ชันขออนุญาตเข้าถึงอุปกรณ์
   const handleRequestPermission = () => {
     const isConfirm = window.confirm(
-      "ระบบต้องการขออนุญาตเข้าถึงพื้นที่จัดเก็บข้อมูล เพื่อทำการอัปโหลดรูปภาพโปรไฟล์ของคุณ ยืนยันเพื่อดำเนินการต่อ?",
+      "อนุญาตให้เข้าถึงคลังภาพ เพื่อเปลี่ยนรูปโปรไฟล์ของคุณ",
     );
     if (isConfirm && fileInputRef.current) {
       fileInputRef.current.click(); // เปิดหน้าต่างเลือกไฟล์

@@ -32,7 +32,7 @@ export default function CheckinFeedback() {
     const hasPermission = localStorage.getItem("file_access_permission");
     if (!hasPermission) {
       const isConfirm = window.confirm(
-        "ระบบต้องการขออนุญาตเข้าถึงกล้องหรือพื้นที่จัดเก็บรูปภาพ เพื่อแนบหลักฐานการใช้บริการสนามกีฬา ยืนยันเพื่อดำเนินการต่อ?",
+        "ขออนุญาตเข้าถึงกล้องและรูปภาพ เพื่ออัปโหลดหลักฐานการเข้าใช้งานสนามกีฬา",
       );
       if (isConfirm) {
         localStorage.setItem("file_access_permission", "true");
