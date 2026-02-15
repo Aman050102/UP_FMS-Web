@@ -71,10 +71,16 @@ export default function EquipmentPage() {
         const returnRes = await fetch(`${API}/api/equipment/pending-returns`);
         const returnData = await returnRes.json();
         if (returnData.ok) {
+          // แก้ไข Logic การ Group ข้อมูลให้ยืดหยุ่นขึ้น (ป้องกัน Data Type mismatch)
           const grouped = returnData.rows.reduce((acc: any, curr: any) => {
-            if (!acc[curr.student_id])
-              acc[curr.student_id] = { id: curr.student_id, faculty: curr.faculty, items: [] };
-            acc[curr.student_id].items.push(curr);
+            const sId = String(curr.student_id); // บังคับเป็น String
+            if (!acc[sId]) {
+              acc[sId] = { id: sId, faculty: curr.faculty || "ไม่ระบุคณะ", items: [] };
+            }
+            acc[sId].items.push({
+              ...curr,
+              remaining: Number(curr.qty) || 0 // บังคับเป็น Number
+            });
             return acc;
           }, {});
           setPendingReturns(Object.values(grouped));
@@ -107,7 +113,7 @@ export default function EquipmentPage() {
 
     try {
       for (const item of borrowItems) {
-        await fetch(`${API}/api/equipment/borrow`, {
+        const res = await fetch(`${API}/api/equipment/borrow`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -121,6 +127,7 @@ export default function EquipmentPage() {
             skip_stock_update: isBackdate
           }),
         });
+        if (!res.ok) throw new Error("การบันทึกอุปกรณ์บางรายการไม่สำเร็จ");
       }
       alert(isBackdate ? "บันทึกสถิติย้อนหลังสำเร็จ" : "ยืมอุปกรณ์สำเร็จ");
       setBorrowItems([]);
@@ -128,8 +135,8 @@ export default function EquipmentPage() {
       setIsBackdate(false);
       setBackdateValue("");
       refreshData();
-    } catch (e) {
-      alert("เกิดข้อผิดพลาดในการทำรายการ");
+    } catch (e: any) {
+      alert("เกิดข้อผิดพลาด: " + e.message);
     }
   };
 
@@ -138,7 +145,12 @@ export default function EquipmentPage() {
       const res = await fetch(`${API}/api/equipment/return`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ student_id: sid, faculty, equipment: itemName, qty }),
+        body: JSON.stringify({
+          student_id: sid,
+          faculty: faculty,
+          equipment: itemName,
+          qty: Number(qty)
+        }),
       });
       if (res.ok) {
         alert("คืนอุปกรณ์สำเร็จ");
@@ -190,7 +202,7 @@ export default function EquipmentPage() {
 
       <div className="space-y-5">
         {activeTab === "borrow" && (
-          <div className="flex flex-col gap-5 animate-in fade-in duration-300">
+          <div className="flex flex-col gap-5 animate-in fade-in duration-300 text-left">
             <section className="bg-white border border-border-main rounded-xl p-5 shadow-sm">
               <div className="flex justify-between items-center mb-4">
                 <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold">
@@ -220,36 +232,23 @@ export default function EquipmentPage() {
                     value={backdateValue}
                     onChange={(e) => setBackdateValue(e.target.value)}
                   />
-                  <p className="text-[11px] text-blue-500 mt-2 font-medium">⚠️ หมายเหตุ: ข้อมูลนี้จะปรากฏในประวัติ แต่จะไม่หักลบจำนวนอุปกรณ์ในคลังปัจจุบัน</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase">ชื่อ-นามสกุล</label>
-                    <input type="text" className="w-full p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20" value={studentInfo.name} onChange={(e) => setStudentInfo({ ...studentInfo, name: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase">รหัสนิสิต / รหัสนักเรียน</label>
-                    <input type="text" className="w-full p-2.5 border border-border-main rounded-lg outline-none focus:ring-2 focus:ring-primary/20" value={studentInfo.id} onChange={(e) => setStudentInfo({ ...studentInfo, id: e.target.value })} />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase">คณะ / หน่วยงาน</label>
-                    <select className="w-full p-2.5 border border-border-main rounded-lg bg-white" value={studentInfo.faculty} onChange={(e) => setStudentInfo({ ...studentInfo, faculty: e.target.value })}>
-                      <option value="">เลือกคณะ / หน่วยงาน</option>
-                      {UP_FACULTIES.map((f) => <option key={f} value={f}>{f}</option>)}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-text-muted uppercase">เบอร์โทรศัพท์</label>
-                    <input type="text" maxLength={10} className="w-full p-2.5 border border-border-main rounded-lg" value={studentInfo.phone} onChange={(e) => setStudentInfo({ ...studentInfo, phone: e.target.value })} />
-                  </div>
+                  <input type="text" placeholder="ชื่อ-นามสกุล" className="w-full p-2.5 border border-border-main rounded-lg outline-none" value={studentInfo.name} onChange={(e) => setStudentInfo({ ...studentInfo, name: e.target.value })} />
+                  <input type="text" placeholder="รหัสนิสิต / รหัสนักเรียน" className="w-full p-2.5 border border-border-main rounded-lg outline-none" value={studentInfo.id} onChange={(e) => setStudentInfo({ ...studentInfo, id: e.target.value })} />
+                  <select className="w-full p-2.5 border border-border-main rounded-lg bg-white" value={studentInfo.faculty} onChange={(e) => setStudentInfo({ ...studentInfo, faculty: e.target.value })}>
+                    <option value="">เลือกคณะ / หน่วยงาน</option>
+                    {UP_FACULTIES.map((f) => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  <input type="text" placeholder="เบอร์โทรศัพท์" maxLength={10} className="w-full p-2.5 border border-border-main rounded-lg" value={studentInfo.phone} onChange={(e) => setStudentInfo({ ...studentInfo, phone: e.target.value })} />
                 </div>
               )}
             </section>
 
             <section className="bg-white border border-border-main rounded-xl p-5 shadow-sm">
               <h4 className="text-primary flex items-center gap-2.5 text-lg font-bold mb-4">
-                <Package size={18} /> อุปกรณ์ {isBackdate && "(เลือกได้ไม่จำกัดตามจริง)"}
+                <Package size={18} /> อุปกรณ์
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {stocks.map((item) => (
@@ -259,14 +258,14 @@ export default function EquipmentPage() {
                       <div className="overflow-hidden">
                         <strong className="block text-sm truncate">{item.name}</strong>
                         <small className={`text-[10px] font-bold ${item.stock > 0 ? 'text-gray-400' : 'text-red-500'}`}>
-                          {isBackdate ? "โหมดสถิติ" : (item.stock > 0 ? `คงเหลือ ${item.stock}` : "สินค้าหมด")}
+                          {isBackdate ? "โหมดสถิติ" : `คงเหลือ ${item.stock}`}
                         </small>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 bg-white p-1 px-2 rounded-full border border-border-main shadow-sm">
-                      <button className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer" onClick={() => handleUpdateBorrowQty(item.name, -1)}><Minus size={12} /></button>
+                      <button className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-primary hover:text-white" onClick={() => handleUpdateBorrowQty(item.name, -1)}><Minus size={12} /></button>
                       <span className="font-extrabold text-sm min-w-[15px] text-center">{borrowItems.find((i) => i.name === item.name)?.qty || 0}</span>
-                      <button className="w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center hover:bg-primary hover:text-white transition-all cursor-pointer" onClick={() => handleUpdateBorrowQty(item.name, 1)}><Plus size={12} /></button>
+                      <button className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-primary hover:text-white" onClick={() => handleUpdateBorrowQty(item.name, 1)}><Plus size={12} /></button>
                     </div>
                   </div>
                 ))}
@@ -275,20 +274,8 @@ export default function EquipmentPage() {
 
             {borrowItems.length > 0 && (
               <section className={`border-t-4 rounded-xl p-5 animate-in slide-in-from-bottom duration-300 ${isBackdate ? 'bg-blue-50 border-blue-500' : 'bg-primary/5 border-primary'}`}>
-                <h4 className="font-bold mb-3 flex items-center justify-between">
-                  <span>สรุปรายการ</span>
-                  {isBackdate && <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-bold">บันทึกสถิติเท่านั้น</span>}
-                </h4>
-                <div className="space-y-2 mb-4">
-                  {borrowItems.map((item, idx) => (
-                    <div key={idx} className="flex justify-between items-center py-2 border-b border-dashed border-gray-300">
-                      <span className="text-sm font-medium">{item.name} x {item.qty} ชิ้น</span>
-                      <button className="text-red-500 p-1 hover:bg-red-50 rounded-md" onClick={() => handleUpdateBorrowQty(item.name, -item.qty)}><Trash2 size={16} /></button>
-                    </div>
-                  ))}
-                </div>
                 <button
-                  className={`w-full py-4 rounded-lg font-bold transition-all cursor-pointer ${isBackdate ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg' : 'bg-primary text-white hover:shadow-lg'}`}
+                  className={`w-full py-4 rounded-lg font-bold transition-all ${isBackdate ? 'bg-blue-600 text-white shadow-lg' : 'bg-primary text-white shadow-lg'}`}
                   onClick={handleBorrowSubmit}
                 >
                   {isBackdate ? "ยืนยันบันทึกสถิติ" : "ยืนยันการทำรายการยืม"}
@@ -299,25 +286,35 @@ export default function EquipmentPage() {
         )}
 
         {activeTab === "return" && (
-          <div className="space-y-3 animate-in fade-in duration-300">
+          <div className="space-y-3 animate-in fade-in duration-300 text-left">
             {pendingReturns.length === 0 ? (
-              <div className="text-center py-20 bg-white border border-dashed border-border-main rounded-xl text-text-muted">ไม่มีรายการค้างคืน</div>
+              <div className="text-center py-20 bg-white border border-dashed border-border-main rounded-xl text-text-muted italic">ไม่มีรายการค้างคืน</div>
             ) : (
               pendingReturns.map((user) => (
                 <div key={user.id} className="border border-border-main rounded-xl bg-white shadow-sm overflow-hidden">
                   <div className="p-4 flex justify-between items-center cursor-pointer hover:bg-gray-50" onClick={() => setExpandedId(expandedId === user.id ? null : user.id)}>
-                    <div className="flex items-center gap-4"><strong className="text-primary text-lg">{user.id}</strong><span className="text-sm text-text-muted">{user.faculty}</span></div>
+                    <div className="flex items-center gap-4">
+                      <strong className="text-primary text-lg">{user.id}</strong>
+                      <span className="text-sm text-text-muted">{user.faculty}</span>
+                    </div>
                     {expandedId === user.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                   </div>
                   {expandedId === user.id && (
                     <div className="p-4 bg-gray-50 border-t border-border-main">
-                      <table className="w-full text-sm bg-white rounded-lg">
+                      <table className="w-full text-sm bg-white rounded-lg border border-gray-100">
                         <tbody className="divide-y divide-gray-100">
                           {user.items.map((item: any, i: number) => (
                             <tr key={i}>
                               <td className="p-3 font-medium">{item.equipment}</td>
                               <td className="p-3 text-center text-red-500 font-bold">{item.remaining} ชิ้น</td>
-                              <td className="p-3 text-right"><button className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold" onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}>คืน</button></td>
+                              <td className="p-3 text-right">
+                                <button
+                                  className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                                  onClick={() => handleReturnItem(user.id, user.faculty, item.equipment, item.remaining)}
+                                >
+                                  รับคืน
+                                </button>
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -331,7 +328,7 @@ export default function EquipmentPage() {
         )}
 
         {activeTab === "history" && (
-          <div className="bg-white border border-border-main rounded-xl p-6 shadow-sm overflow-x-auto animate-in fade-in duration-300">
+          <div className="bg-white border border-border-main rounded-xl p-6 shadow-sm overflow-x-auto animate-in fade-in duration-300 text-left">
             <h4 className="text-primary flex items-center gap-2.5 font-bold mb-6"><History size={18} /> ประวัติการทำรายการวันนี้</h4>
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-100">

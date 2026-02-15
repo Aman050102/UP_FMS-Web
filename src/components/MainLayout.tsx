@@ -4,7 +4,8 @@ import MainHeader from "./MainHeader";
 import Sidebar from "./Sidebar";
 
 interface MainLayoutProps {
-  role: "user" | "staff" | "assistant";
+  // รับบทบาทของประเภทหน้าที่กำลังเปิดอยู่
+  role: "user" | "staff" | "assistant" | "admin";
 }
 
 export default function MainLayout({ role }: MainLayoutProps) {
@@ -20,7 +21,7 @@ export default function MainLayout({ role }: MainLayoutProps) {
       />
       <div className="flex flex-1 overflow-hidden mt-header">
         <Sidebar
-          role={role}
+          role={role} // ส่ง role หน้าปัจจุบันไปให้ Sidebar แสดงเมนูให้ตรง
           open={isMenuOpen}
           onClose={() => setIsMenuOpen(false)}
         />

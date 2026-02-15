@@ -25,7 +25,7 @@ export default function FacilityBooking() {
 
         {/* ข้อความแจ้งเตือน */}
         <h1 className="text-2xl font-black text-slate-800 mb-3">
-          ระบบจัดการและจองสนามกีฬา
+          ระบบการจองสนามกีฬา
         </h1>
         <div className="inline-block px-4 py-1.5 bg-amber-50 text-amber-600 rounded-full text-sm font-bold mb-6">
           Coming Soon

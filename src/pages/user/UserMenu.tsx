@@ -15,7 +15,7 @@ export default function UserMenu() {
     {
       title: "ระบบการจองสนามกีฬา",
       subtitle: "Sports Facility Booking System",
-      path: "/booking",
+      path: "/user/booking",
       icon: <CalendarCheck2 size={40} />,
     },
   ];
