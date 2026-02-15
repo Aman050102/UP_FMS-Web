@@ -61,13 +61,12 @@ export default function StaffMenu() {
     <div className="flex flex-col min-h-screen bg-bg-main font-kanit">
       <main className="flex-1 mt-header px-6 py-10 flex flex-col items-center overflow-y-auto">
         <div className="w-full max-w-[1200px] mx-auto">
-          <header className="text-center mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
-            <h1 className="text-[2.5rem] font-black text-text-main mb-2">
+          <header className="text-center mb-12">
+            <h1 className="text-[2rem] font-bold text-text-main mb-2 leading-tight">
               ระบบจัดการสนามกีฬา
             </h1>
-            <p className="text-[1.1rem] text-text-muted">
-              ยินดีต้อนรับคุณ{" "}
-              <span className="text-primary font-bold">{displayName}</span>{" "}
+            <p className="text-[1.1rem] text-text-muted font-light">
+              ยินดีต้อนรับคุณ {displayName}
             </p>
           </header>
 
