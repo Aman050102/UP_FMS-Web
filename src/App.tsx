@@ -12,6 +12,7 @@ import CheckinReportPage from "./pages/staff/CheckinReportPage";
 import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
 import StaffBookingManage from "./pages/staff/StaffBookingManage";
 import Notification from "./pages/staff/Notification";
+import UsageReport from "./pages/staff/UsageReport";
 
 // Student assistant Pages
 import AssistantMenu from "./pages/assistant/AssistantMenu";
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
         <Route path="/staff/booking-manage" element={<StaffBookingManage />} />
         <Route path="/staff/notifications" element={<Notification />} />
+        <Route path="/staff/usage-report" element={<UsageReport />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/login" replace />} />
