@@ -7,8 +7,7 @@ type Row = {
 };
 
 export default function UsageReport() {
-  const API_BASE =
-    "https://up-fms-api-hono.your-account.workers.dev";
+  const API_BASE = "http://localhost:5173";
 
   const month =
     new URLSearchParams(window.location.search).get("month") ||
