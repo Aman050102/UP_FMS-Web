@@ -11,12 +11,12 @@ import {
 export default function StaffDocumentManagement() {
   const [activeTab, setActiveTab] = useState("usage-report");
 
-  // ✅ เพิ่ม state เดือน
+  //เพิ่ม state เดือน
   const [month, setMonth] = useState(
     new Date().toISOString().slice(0, 7)
   );
 
-  // ✅ ฟังก์ชันเปิดหน้า PDF
+  //เปิดหน้า PDF
   const openPDF = () => {
     window.open(
       `/staff/usage-report?month=${encodeURIComponent(month)}`,
