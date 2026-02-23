@@ -1,17 +1,7 @@
 import { useState, useEffect } from "react";
-import {
-  Eye,
-  EyeOff,
-  ArrowLeft,
-  ShieldCheck,
-  XCircle,
-  Send,
-} from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, ShieldCheck, XCircle, Send } from "lucide-react";
 import dsaLogo from "../assets/dsa.png";
-
-const API = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
-).replace(/\/$/, "");
+import client from "../lib/client"; 
 
 export default function Register() {
   const [step, setStep] = useState<"form" | "otp">("form");
@@ -55,18 +45,13 @@ export default function Register() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: fullName,
-          email,
-          username,
-          password: pw,
-        }),
+      // ใช้ client.post แทน fetch
+      await client.post("/api/auth/register", {
+        full_name: fullName,
+        email,
+        username,
+        password: pw,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
       setStep("otp");
     } catch (err: any) {
       setError(err.message);
@@ -79,19 +64,14 @@ export default function Register() {
     setError("");
     try {
       setLoading(true);
-      const res = await fetch(`${API}/api/auth/register/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: fullName,
-          email,
-          username,
-          password: pw,
-          otp,
-        }),
+      // ใช้ client.post แทน fetch
+      await client.post("/api/auth/register/confirm", {
+        full_name: fullName,
+        email,
+        username,
+        password: pw,
+        otp,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
 
       setOk("ลงทะเบียนสำเร็จ! กำลังไปหน้าล็อกอิน...");
       setTimeout(() => (window.location.href = "/login"), 2500);
@@ -102,20 +82,14 @@ export default function Register() {
     }
   };
 
+  // ส่วน UI เหมือนเดิม (ตัดออกเพื่อความสั้น แต่คงการทำงานเดิมไว้)
   if (step === "otp") {
     return (
       <div className="min-h-screen bg-[#e6e0e0] flex items-center justify-center p-6 font-kanit text-[#1e293b]">
         <div className="w-full max-w-[450px] bg-white rounded-[28px] p-10 text-center shadow-2xl">
-          <Send
-            size={50}
-            className="mx-auto text-[#ec4899] mb-4 animate-bounce"
-          />
-          <h2 className="text-2xl font-bold mb-2 text-[#2b2346]">
-            ยืนยันอีเมลของคุณ
-          </h2>
-          <p className="text-sm text-slate-500 mb-8">
-            เราส่งรหัส OTP 6 หลักไปที่ {email} แล้ว
-          </p>
+          <Send size={50} className="mx-auto text-[#ec4899] mb-4 animate-bounce" />
+          <h2 className="text-2xl font-bold mb-2 text-[#2b2346]">ยืนยันอีเมลของคุณ</h2>
+          <p className="text-sm text-slate-500 mb-8">เราส่งรหัส OTP 6 หลักไปที่ {email} แล้ว</p>
           <input
             type="text"
             maxLength={6}
@@ -124,9 +98,7 @@ export default function Register() {
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
           />
-          {error && (
-            <p className="text-red-500 text-sm mt-4 font-bold">{error}</p>
-          )}
+          {error && <p className="text-red-500 text-sm mt-4 font-bold">{error}</p>}
           <button
             onClick={onConfirmRegister}
             disabled={loading}
@@ -134,10 +106,7 @@ export default function Register() {
           >
             {loading ? "กำลังบันทึก..." : "ยืนยันการลงทะเบียน"}
           </button>
-          <button
-            onClick={() => setStep("form")}
-            className="mt-6 text-slate-400 text-sm flex items-center justify-center gap-2 mx-auto"
-          >
+          <button onClick={() => setStep("form")} className="mt-6 text-slate-400 text-sm flex items-center justify-center gap-2 mx-auto">
             <ArrowLeft size={16} /> กลับไปแก้ไขข้อมูล
           </button>
         </div>
@@ -152,12 +121,8 @@ export default function Register() {
           <img src={dsaLogo} className="h-[100px] object-contain" />
         </div>
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-[#2b2346]">
-            สร้างบัญชีผู้ใช้งานใหม่
-          </h1>
-          <p className="text-sm text-[#8b86a4]">
-            UP-FMS | กองกิจการนิสิต มหาวิทยาลัยพะเยา
-          </p>
+          <h1 className="text-2xl font-bold text-[#2b2346]">สร้างบัญชีผู้ใช้งานใหม่</h1>
+          <p className="text-sm text-[#8b86a4]">UP-FMS | กองกิจการนิสิต มหาวิทยาลัยพะเยา</p>
         </div>
         <form className="space-y-5" onSubmit={onRegisterRequest}>
           <div className="flex flex-col gap-1.5">
@@ -192,9 +157,7 @@ export default function Register() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="flex flex-col gap-1.5 relative">
-              <label className="text-sm font-bold">
-                รหัสผ่าน (12-16 ตัว + สัญลักษณ์)
-              </label>
+              <label className="text-sm font-bold">รหัสผ่าน (12-16 ตัว + สัญลักษณ์)</label>
               <div className="relative">
                 <input
                   type={showPw ? "text" : "password"}
@@ -203,11 +166,7 @@ export default function Register() {
                   onChange={(e) => setPw(e.target.value)}
                   required
                 />
-                <button
-                  type="button"
-                  className="absolute right-0 bottom-2 text-[#7c7894]"
-                  onClick={() => setShowPw(!showPw)}
-                >
+                <button type="button" className="absolute right-0 bottom-2 text-[#7c7894]" onClick={() => setShowPw(!showPw)}>
                   {showPw ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
@@ -231,11 +190,7 @@ export default function Register() {
             </div>
           </div>
           {error && <p className="text-sm text-red-500 font-bold">{error}</p>}
-          {ok && (
-            <p className="text-sm text-green-600 font-bold bg-green-50 p-3 rounded-lg">
-              {ok}
-            </p>
-          )}
+          {ok && <p className="text-sm text-green-600 font-bold bg-green-50 p-3 rounded-lg">{ok}</p>}
           <div className="pt-2 space-y-4">
             <button
               type="submit"
@@ -244,11 +199,7 @@ export default function Register() {
             >
               {loading ? "กำลังส่งข้อมูล..." : "ลงทะเบียน"}
             </button>
-            <button
-              type="button"
-              className="w-full py-3 bg-gray-100 text-slate-500 font-bold rounded-full"
-              onClick={() => (window.location.href = "/login")}
-            >
+            <button type="button" className="w-full py-3 bg-gray-100 text-slate-500 font-bold rounded-full" onClick={() => (window.location.href = "/login")}>
               <ArrowLeft size={20} className="inline mr-2" /> กลับไปหน้าล็อกอิน
             </button>
           </div>
@@ -260,9 +211,7 @@ export default function Register() {
 
 function PolicyItem({ label, valid }: { label: string; valid: boolean }) {
   return (
-    <div
-      className={`flex items-center gap-1 ${valid ? "text-green-600" : "text-slate-400"}`}
-    >
+    <div className={`flex items-center gap-1 ${valid ? "text-green-600" : "text-slate-400"}`}>
       {valid ? <ShieldCheck size={12} /> : <XCircle size={12} />} {label}
     </div>
   );

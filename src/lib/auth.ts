@@ -1,13 +1,20 @@
-// src/lib/auth.ts
-const API = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
-
-/** เช็ค session ยังอยู่ไหม ไม่อยู่ให้ redirect ไปหน้า login */
-export async function ensureSession(nextPath?: string) {
-  const r = await fetch(`${API}/auth/me/`, { credentials: "include" });
-  if (r.status === 401) {
-    const next = encodeURIComponent(nextPath || location.pathname);
-    location.href = `/login?next=${next}`;
+/** เช็คเบื้องต้นว่ามี token ไหม ถ้าไม่มีให้ไปหน้า login */
+export function ensureSession() {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    const next = encodeURIComponent(window.location.pathname);
+    window.location.href = `/login?next=${next}`;
     return false;
   }
   return true;
+}
+
+/** ดึงข้อมูล User จาก LocalStorage มาใช้งานในหน้า UI */
+export function getCurrentUser() {
+  return {
+    id: localStorage.getItem("user_id"),
+    name: localStorage.getItem("display_name"),
+    role: localStorage.getItem("user_role"),
+    avatar: localStorage.getItem("user_image"),
+  };
 }

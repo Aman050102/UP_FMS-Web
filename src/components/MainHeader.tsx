@@ -223,16 +223,7 @@ export default function MainHeader({ onToggleMenu, role }: any) {
                     <span className="text-[14px]">จัดการสิทธิ์สมาชิก</span>
                   </button>
                 )}
-                <button
-                  className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-gray-50 text-gray-600 rounded-lg text-left"
-                  onClick={() => {
-                    navigate("/profile-settings");
-                    setShowProfile(false);
-                  }}
-                >
-                  <Settings size={18} className="text-gray-400" />
-                  <span className="text-[14px]">จัดการโปรไฟล์</span>
-                </button>
+
                 <button
                   className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-red-50 text-red-500 rounded-lg font-bold text-left"
                   onClick={() => {

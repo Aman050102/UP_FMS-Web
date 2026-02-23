@@ -4,7 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 
 // Shared Pages
-import ProfileSettings from "./pages/shared/ProfileSettings";
+// import ProfileSettings from "./pages/shared/ProfileSettings";
 
 // Staff Pages
 import StaffMenu from "./pages/staff/StaffMenu";
@@ -77,9 +77,9 @@ export default function App() {
       </Route>
 
       {/* 4. หน้าจัดการโปรไฟล์ (สลับ Layout ตามสิทธิ์ที่ Login อยู่จริง) */}
-      <Route element={<MainLayout role={userRole} />}>
+      {/* <Route element={<MainLayout role={userRole} />}>
         <Route path="/profile-settings" element={<ProfileSettings />} />
-      </Route>
+      </Route> */}
 
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />

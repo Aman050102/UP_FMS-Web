@@ -7,10 +7,7 @@ import {
   UserPlus,
   Loader2,
 } from "lucide-react";
-
-const API = (
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8787"
-).replace(/\/$/, "");
+import client from "../../lib/client";
 
 interface Collaborator {
   id: number;
@@ -28,14 +25,13 @@ export default function ManageAccess() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedRole, setSelectedRole] = useState<string>("assistant");
 
-  // 1. ดึงรายชื่อผู้ที่ได้รับสิทธิ์ปัจจุบัน
+  // 1. ดึงรายชื่อผู้ที่ได้รับสิทธิ์ปัจจุบัน (ใช้ Axios)
   const fetchCollaborators = async () => {
     try {
-      const res = await fetch(`${API}/api/auth/collaborators`);
-      const data = await res.json();
-      setCollaborators(data);
-    } catch (e) {
-      console.error("Fetch error:", e);
+      const res = await client.get("/api/auth/collaborators");
+      setCollaborators(res.data);
+    } catch (e: any) {
+      console.error("Fetch error:", e.message);
     } finally {
       setLoading(false);
     }
@@ -45,56 +41,55 @@ export default function ManageAccess() {
     fetchCollaborators();
   }, []);
 
-  // 2. ค้นหาผู้ใช้จาก DB เมื่อมีการพิมพ์ (Debounce 500ms)
+  // 2. ค้นหาผู้ใช้จาก DB (Debounce 500ms) พร้อมใช้ Axios
   useEffect(() => {
     const delay = setTimeout(async () => {
       if (searchQuery.length < 2) {
         setSearchResults([]);
         return;
       }
-      const res = await fetch(`${API}/api/auth/search-users?q=${searchQuery}`);
-      const data = await res.json();
-      setSearchResults(data);
+      try {
+        const res = await client.get(`/api/auth/search-users?q=${searchQuery}`);
+        setSearchResults(res.data);
+      } catch (e: any) {
+        console.error("Search error:", e.message);
+      }
     }, 500);
     return () => clearTimeout(delay);
   }, [searchQuery]);
 
-  // 3. ฟังก์ชันมอบสิทธิ์
+  // 3. ฟังก์ชันมอบสิทธิ์ (ใช้ Axios)
   const handleAssignRole = async () => {
     if (!selectedUser) return;
     try {
-      const res = await fetch(`${API}/api/auth/update-role`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: selectedUser.id,
-          newRole: selectedRole,
-        }),
+      const res = await client.post("/api/auth/update-role", {
+        userId: selectedUser.id,
+        newRole: selectedRole,
       });
-      if (res.ok) {
+
+      if (res.status === 200) {
         setIsModalOpen(false);
         setSelectedUser(null);
         setSearchQuery("");
         fetchCollaborators();
         alert("มอบสิทธิ์สำเร็จ");
       }
-    } catch (e) {
-      alert("เกิดข้อผิดพลาดในการมอบสิทธิ์");
+    } catch (e: any) {
+      alert(e.message || "เกิดข้อผิดพลาดในการมอบสิทธิ์");
     }
   };
 
-  // 4. ฟังก์ชันลบสิทธิ์ (กลับเป็น user)
+  // 4. ฟังก์ชันลบสิทธิ์ (ใช้ Axios)
   const handleRemoveRole = async (userId: number) => {
     if (!window.confirm("ต้องการยกเลิกสิทธิ์ผู้ใช้นี้ใช่หรือไม่?")) return;
     try {
-      const res = await fetch(`${API}/api/auth/update-role`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, newRole: "user" }),
+      const res = await client.post("/api/auth/update-role", {
+        userId,
+        newRole: "user"
       });
-      if (res.ok) fetchCollaborators();
-    } catch (e) {
-      alert("เกิดข้อผิดพลาด");
+      if (res.status === 200) fetchCollaborators();
+    } catch (e: any) {
+      alert(e.message || "เกิดข้อผิดพลาด");
     }
   };
 
