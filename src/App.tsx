@@ -15,6 +15,7 @@ import CheckinReportPage from "./pages/staff/CheckinReportPage";
 import StaffFeedbackView from "./pages/staff/StaffFeedbackView";
 import StaffBookingManage from "./pages/staff/StaffBookingManage";
 import Notification from "./pages/staff/Notification";
+import DisposalApprovalPage from "./pages/staff/DisposalApprovalPage";
 
 // Admin Pages
 import ManageAccess from "./pages/admin/ManageAccess";
@@ -24,6 +25,7 @@ import AssistantMenu from "./pages/assistant/AssistantMenu";
 import CheckinPage from "./pages/assistant/CheckinPage";
 import EquipmentPage from "./pages/assistant/EquipmentPage";
 import CheckinFeedback from "./pages/assistant/CheckinFeedback";
+import EquipmentDisposalPage from "./pages/assistant/EquipmentDisposalPage";
 
 // User Pages
 import UserMenu from "./pages/user/UserMenu";
@@ -54,6 +56,7 @@ export default function App() {
           path="/assistant/checkin_feedback"
           element={<CheckinFeedback />}
         />
+        <Route path="/assistant/disposal" element={<EquipmentDisposalPage />} />
       </Route>
 
       {/* กลุ่มหน้าสำหรับเจ้าหน้าที่/แอดมิน */}
@@ -72,6 +75,7 @@ export default function App() {
         <Route path="/staff/feedback" element={<StaffFeedbackView />} />
         <Route path="/staff/booking-manage" element={<StaffBookingManage />} />
         <Route path="/staff/notifications" element={<Notification />} />
+        <Route path="/staff/disposal-approval" element={<DisposalApprovalPage />} />
         <Route path="/admin/manage-access" element={<ManageAccess />} />
         <Route path="/admin/dashboard" element={<CheckinReportPage />} />
       </Route>
